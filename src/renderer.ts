@@ -8,6 +8,8 @@ const colors: Record<TileType | "player", string> = {
   fire: "#e36b2c",
   floor: "#f4ead7",
   goal: "#8ab65f",
+  key: "#d8b23f",
+  lockedDoor: "#6b604d",
   portalOne: "#4f7bc8",
   portalTwo: "#6c58b8",
   spikes: "#9b2f2f",
@@ -31,7 +33,7 @@ export function renderGame(canvas: HTMLCanvasElement, state: GameState): void {
 
   for (let y = 0; y < state.height; y += 1) {
     for (let x = 0; x < state.width; x += 1) {
-      drawTile(context, state.tiles[y][x], x, y);
+      drawTile(context, getRenderedTile(state.tiles[y][x], state), x, y);
     }
   }
 
@@ -57,6 +59,22 @@ function drawTile(context: CanvasRenderingContext2D, tile: TileType, x: number, 
   if (tile === "portalTwo") {
     drawTileLabel(context, "2", tileX, tileY);
   }
+
+  if (tile === "key") {
+    drawTileLabel(context, "K", tileX, tileY);
+  }
+
+  if (tile === "lockedDoor") {
+    drawTileLabel(context, "L", tileX, tileY);
+  }
+}
+
+function getRenderedTile(tile: TileType, state: GameState): TileType {
+  if (tile === "key" && state.hasKey) {
+    return "floor";
+  }
+
+  return tile;
 }
 
 function drawPlayer(context: CanvasRenderingContext2D, state: GameState): void {

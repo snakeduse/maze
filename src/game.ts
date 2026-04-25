@@ -33,6 +33,8 @@ const tileTypeBySymbol: Record<TileSymbol, TileType> = {
   D: "dynamite",
   F: "fire",
   G: "goal",
+  K: "key",
+  L: "lockedDoor",
   S: "spikes",
 };
 
@@ -53,6 +55,8 @@ export function parseLevel(level: LevelData): ParsedLevel {
   let playerStartPosition: Position | null = null;
   let portalOnePosition: Position | null = null;
   let portalTwoPosition: Position | null = null;
+  let keyPosition: Position | null = null;
+  let lockedDoorPosition: Position | null = null;
 
   for (let y = 0; y < level.length; y += 1) {
     const row = level[y];
@@ -90,6 +94,22 @@ export function parseLevel(level: LevelData): ParsedLevel {
 
           portalTwoPosition = position;
         },
+        onKey(position: Position): void {
+          if (keyPosition !== null) {
+            throw new Error(`Level must contain at most one key; found another at ${position.x},${position.y}.`);
+          }
+
+          keyPosition = position;
+        },
+        onLockedDoor(position: Position): void {
+          if (lockedDoorPosition !== null) {
+            throw new Error(
+              `Level must contain at most one locked door; found another at ${position.x},${position.y}.`,
+            );
+          }
+
+          lockedDoorPosition = position;
+        },
       }),
     );
   }
@@ -114,6 +134,8 @@ type LevelMarkers = {
   onPlayerStart: (position: Position) => void;
   onPortalOne: (position: Position) => void;
   onPortalTwo: (position: Position) => void;
+  onKey: (position: Position) => void;
+  onLockedDoor: (position: Position) => void;
 };
 
 function parseLevelRow(
@@ -151,6 +173,14 @@ function parseLevelTile(
       markers.onPortalTwo(position);
     }
 
+    if (tile === "key") {
+      markers.onKey(position);
+    }
+
+    if (tile === "lockedDoor") {
+      markers.onLockedDoor(position);
+    }
+
     return tile;
   }
 
@@ -173,6 +203,7 @@ export function createGame(level: LevelData): GameState {
     portalOnePosition: copyPosition(parsedLevel.portalOnePosition),
     portalTwoPosition: copyPosition(parsedLevel.portalTwoPosition),
     moveCount: 0,
+    hasKey: false,
     isComplete: false,
     isDead: false,
   };
@@ -183,6 +214,7 @@ export function resetGame(state: GameState): GameState {
     ...state,
     playerPosition: { ...state.playerStartPosition },
     moveCount: 0,
+    hasKey: false,
     isComplete: false,
     isDead: false,
   };
@@ -205,12 +237,14 @@ export function movePlayer(state: GameState, direction: Direction): GameState {
 
   const nextTile = state.tiles[nextPosition.y][nextPosition.x];
   const playerPosition = getFinalPositionAfterMove(state, nextPosition, nextTile);
+  const hasKey = state.hasKey || isKeyTile(nextTile);
 
   return {
     ...state,
     playerPosition,
     moveCount: state.moveCount + 1,
-    isComplete: isGoalTile(nextTile),
+    hasKey,
+    isComplete: isCompletionTile(nextTile, hasKey),
     isDead: isDeadlyTile(nextTile),
   };
 }
@@ -225,15 +259,25 @@ function canMoveTo(state: GameState, position: Position): boolean {
     return false;
   }
 
-  return canEnterTile(state.tiles[position.y][position.x]);
+  return canEnterTile(state.tiles[position.y][position.x], state);
 }
 
-function canEnterTile(tile: TileType): boolean {
-  return tile === "floor" || tile === "goal" || isPortalTile(tile) || isDeadlyTile(tile);
+function canEnterTile(tile: TileType, state: GameState): boolean {
+  if (tile === "lockedDoor") {
+    return state.hasKey;
+  }
+
+  return (
+    tile === "floor" ||
+    tile === "goal" ||
+    tile === "key" ||
+    isPortalTile(tile) ||
+    isDeadlyTile(tile)
+  );
 }
 
-function isGoalTile(tile: TileType): boolean {
-  return tile === "goal";
+function isCompletionTile(tile: TileType, hasKey: boolean): boolean {
+  return tile === "goal" || (tile === "lockedDoor" && hasKey);
 }
 
 function isDeadlyTile(tile: TileType): boolean {
@@ -242,6 +286,10 @@ function isDeadlyTile(tile: TileType): boolean {
 
 function isPortalTile(tile: TileType): boolean {
   return tile === "portalOne" || tile === "portalTwo";
+}
+
+function isKeyTile(tile: TileType): boolean {
+  return tile === "key";
 }
 
 function getFinalPositionAfterMove(

@@ -25,6 +25,7 @@ npm run build
 - Move: WASD or Arrow keys
 - Restart: R
 - Reach the goal to complete the level.
+- Collect the key to unlock the locked door.
 - Avoid spikes, fire, acid, and dynamite.
 - Portals `1` and `2` teleport to each other.
 
@@ -38,5 +39,7 @@ npm run build
 - `F` fire
 - `A` acid
 - `D` dynamite
+- `K` key
+- `L` locked door
 - `1` portal one
 - `2` portal two

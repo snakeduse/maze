@@ -30,8 +30,9 @@ function render(): void {
 
 function updateHud(element: HTMLDivElement, state: GameState): void {
   const statusText = getStatusText(state);
+  const keyText = state.hasKey ? "yes" : "no";
 
-  element.textContent = `Moves: ${state.moveCount} | Move: WASD or Arrow keys | Restart: R${statusText}`;
+  element.textContent = `Moves: ${state.moveCount} | Key: ${keyText} | Move: WASD or Arrow keys | Restart: R${statusText}`;
 }
 
 function getStatusText(state: GameState): string {

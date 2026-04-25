@@ -12,9 +12,11 @@ export type TileType =
   | "acid"
   | "dynamite"
   | "portalOne"
-  | "portalTwo";
+  | "portalTwo"
+  | "key"
+  | "lockedDoor";
 
-export type TileSymbol = "#" | "." | "G" | "S" | "F" | "A" | "D" | "1" | "2";
+export type TileSymbol = "#" | "." | "G" | "S" | "F" | "A" | "D" | "1" | "2" | "K" | "L";
 
 export type TileGrid = readonly (readonly TileType[])[];
 
@@ -31,6 +33,7 @@ export type GameState = {
   portalOnePosition: Position | null;
   portalTwoPosition: Position | null;
   moveCount: number;
+  hasKey: boolean;
   isComplete: boolean;
   isDead: boolean;
 };
