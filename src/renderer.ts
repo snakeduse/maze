@@ -8,6 +8,8 @@ const colors: Record<TileType | "player", string> = {
   fire: "#e36b2c",
   floor: "#f4ead7",
   goal: "#8ab65f",
+  portalOne: "#4f7bc8",
+  portalTwo: "#6c58b8",
   spikes: "#9b2f2f",
   wall: "#2f3a4a",
   player: "#d65a31",
@@ -47,6 +49,14 @@ function drawTile(context: CanvasRenderingContext2D, tile: TileType, x: number, 
     context.strokeStyle = "#e2d2b8";
     context.strokeRect(tileX, tileY, TILE_SIZE, TILE_SIZE);
   }
+
+  if (tile === "portalOne") {
+    drawTileLabel(context, "1", tileX, tileY);
+  }
+
+  if (tile === "portalTwo") {
+    drawTileLabel(context, "2", tileX, tileY);
+  }
 }
 
 function drawPlayer(context: CanvasRenderingContext2D, state: GameState): void {
@@ -58,4 +68,17 @@ function drawPlayer(context: CanvasRenderingContext2D, state: GameState): void {
   context.beginPath();
   context.arc(centerX, centerY, radius, 0, Math.PI * 2);
   context.fill();
+}
+
+function drawTileLabel(
+  context: CanvasRenderingContext2D,
+  label: string,
+  tileX: number,
+  tileY: number,
+): void {
+  context.fillStyle = "#f8efe0";
+  context.font = "bold 22px Georgia, serif";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(label, tileX + TILE_SIZE / 2, tileY + TILE_SIZE / 2);
 }

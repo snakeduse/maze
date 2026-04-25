@@ -13,6 +13,8 @@ type ParsedLevel = {
   width: number;
   height: number;
   playerStartPosition: Position;
+  portalOnePosition: Position;
+  portalTwoPosition: Position;
 };
 
 const directionOffsets: Record<Direction, Position> = {
@@ -25,6 +27,8 @@ const directionOffsets: Record<Direction, Position> = {
 const tileTypeBySymbol: Record<TileSymbol, TileType> = {
   "#": "wall",
   ".": "floor",
+  "1": "portalOne",
+  "2": "portalTwo",
   A: "acid",
   D: "dynamite",
   F: "fire",
@@ -47,6 +51,8 @@ export function parseLevel(level: LevelData): ParsedLevel {
 
   const tiles: TileType[][] = [];
   let playerStartPosition: Position | null = null;
+  let portalOnePosition: Position | null = null;
+  let portalTwoPosition: Position | null = null;
 
   for (let y = 0; y < level.length; y += 1) {
     const row = level[y];
@@ -56,14 +62,30 @@ export function parseLevel(level: LevelData): ParsedLevel {
     }
 
     tiles.push(
-      parseLevelRow(row, y, (position) => {
-        if (playerStartPosition !== null) {
-          throw new Error(
-            `Level must contain exactly one player start position; found another at ${position.x},${position.y}.`,
-          );
-        }
+      parseLevelRow(row, y, {
+        onPlayerStart(position: Position): void {
+          if (playerStartPosition !== null) {
+            throw new Error(
+              `Level must contain exactly one player start position; found another at ${position.x},${position.y}.`,
+            );
+          }
 
-        playerStartPosition = position;
+          playerStartPosition = position;
+        },
+        onPortalOne(position: Position): void {
+          if (portalOnePosition !== null) {
+            throw new Error(`Level must contain exactly one portal 1; found another at ${position.x},${position.y}.`);
+          }
+
+          portalOnePosition = position;
+        },
+        onPortalTwo(position: Position): void {
+          if (portalTwoPosition !== null) {
+            throw new Error(`Level must contain exactly one portal 2; found another at ${position.x},${position.y}.`);
+          }
+
+          portalTwoPosition = position;
+        },
       }),
     );
   }
@@ -72,23 +94,39 @@ export function parseLevel(level: LevelData): ParsedLevel {
     throw new Error("Level must contain exactly one player start position, but none was found.");
   }
 
+  if (portalOnePosition === null) {
+    throw new Error("Level must contain exactly one portal 1, but none was found.");
+  }
+
+  if (portalTwoPosition === null) {
+    throw new Error("Level must contain exactly one portal 2, but none was found.");
+  }
+
   return {
     tiles,
     width,
     height: level.length,
     playerStartPosition,
+    portalOnePosition,
+    portalTwoPosition,
   };
 }
+
+type LevelMarkers = {
+  onPlayerStart: (position: Position) => void;
+  onPortalOne: (position: Position) => void;
+  onPortalTwo: (position: Position) => void;
+};
 
 function parseLevelRow(
   row: string,
   y: number,
-  onPlayerStart: (position: Position) => void,
+  markers: LevelMarkers,
 ): TileType[] {
   const tiles: TileType[] = [];
 
   for (let x = 0; x < row.length; x += 1) {
-    tiles.push(parseLevelTile(row[x], { x, y }, onPlayerStart));
+    tiles.push(parseLevelTile(row[x], { x, y }, markers));
   }
 
   return tiles;
@@ -97,15 +135,25 @@ function parseLevelRow(
 function parseLevelTile(
   symbol: string,
   position: Position,
-  onPlayerStart: (position: Position) => void,
+  markers: LevelMarkers,
 ): TileType {
-  if (isTileSymbol(symbol)) {
-    return tileTypeBySymbol[symbol];
+  if (symbol === "P") {
+    markers.onPlayerStart(position);
+    return "floor";
   }
 
-  if (symbol === "P") {
-    onPlayerStart(position);
-    return "floor";
+  if (isTileSymbol(symbol)) {
+    const tile = tileTypeBySymbol[symbol];
+
+    if (tile === "portalOne") {
+      markers.onPortalOne(position);
+    }
+
+    if (tile === "portalTwo") {
+      markers.onPortalTwo(position);
+    }
+
+    return tile;
   }
 
   throw new Error(`Unsupported level symbol "${symbol}" at ${position.x},${position.y}.`);
@@ -115,6 +163,8 @@ function isTileSymbol(symbol: string): symbol is TileSymbol {
   return (
     symbol === "#" ||
     symbol === "." ||
+    symbol === "1" ||
+    symbol === "2" ||
     symbol === "A" ||
     symbol === "D" ||
     symbol === "F" ||
@@ -132,6 +182,8 @@ export function createGame(level: LevelData): GameState {
     height: parsedLevel.height,
     playerPosition: { ...parsedLevel.playerStartPosition },
     playerStartPosition: { ...parsedLevel.playerStartPosition },
+    portalOnePosition: { ...parsedLevel.portalOnePosition },
+    portalTwoPosition: { ...parsedLevel.portalTwoPosition },
     moveCount: 0,
     isComplete: false,
     isDead: false,
@@ -164,10 +216,11 @@ export function movePlayer(state: GameState, direction: Direction): GameState {
   }
 
   const nextTile = state.tiles[nextPosition.y][nextPosition.x];
+  const playerPosition = getFinalPositionAfterMove(state, nextPosition, nextTile);
 
   return {
     ...state,
-    playerPosition: nextPosition,
+    playerPosition,
     moveCount: state.moveCount + 1,
     isComplete: isGoalTile(nextTile),
     isDead: isDeadlyTile(nextTile),
@@ -188,7 +241,7 @@ function canMoveTo(state: GameState, position: Position): boolean {
 }
 
 function canEnterTile(tile: TileType): boolean {
-  return tile === "floor" || tile === "goal" || isDeadlyTile(tile);
+  return tile === "floor" || tile === "goal" || isPortalTile(tile) || isDeadlyTile(tile);
 }
 
 function isGoalTile(tile: TileType): boolean {
@@ -197,4 +250,20 @@ function isGoalTile(tile: TileType): boolean {
 
 function isDeadlyTile(tile: TileType): boolean {
   return deadlyTiles.includes(tile);
+}
+
+function isPortalTile(tile: TileType): boolean {
+  return tile === "portalOne" || tile === "portalTwo";
+}
+
+function getFinalPositionAfterMove(state: GameState, enteredPosition: Position, tile: TileType): Position {
+  if (tile === "portalOne") {
+    return { ...state.portalTwoPosition };
+  }
+
+  if (tile === "portalTwo") {
+    return { ...state.portalOnePosition };
+  }
+
+  return enteredPosition;
 }

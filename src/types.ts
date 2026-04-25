@@ -3,9 +3,18 @@ export type Position = {
   y: number;
 };
 
-export type TileType = "wall" | "floor" | "goal" | "spikes" | "fire" | "acid" | "dynamite";
+export type TileType =
+  | "wall"
+  | "floor"
+  | "goal"
+  | "spikes"
+  | "fire"
+  | "acid"
+  | "dynamite"
+  | "portalOne"
+  | "portalTwo";
 
-export type TileSymbol = "#" | "." | "G" | "S" | "F" | "A" | "D";
+export type TileSymbol = "#" | "." | "G" | "S" | "F" | "A" | "D" | "1" | "2";
 
 export type TileGrid = readonly (readonly TileType[])[];
 
@@ -19,6 +28,8 @@ export type GameState = {
   height: number;
   playerPosition: Position;
   playerStartPosition: Position;
+  portalOnePosition: Position;
+  portalTwoPosition: Position;
   moveCount: number;
   isComplete: boolean;
   isDead: boolean;

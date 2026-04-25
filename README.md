@@ -26,6 +26,7 @@ npm run build
 - Restart: R
 - Reach the goal to complete the level.
 - Avoid spikes, fire, acid, and dynamite.
+- Portals `1` and `2` teleport to each other.
 
 ## Map Symbols
 
@@ -37,3 +38,5 @@ npm run build
 - `F` fire
 - `A` acid
 - `D` dynamite
+- `1` portal one
+- `2` portal two
