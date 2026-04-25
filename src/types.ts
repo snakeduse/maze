@@ -5,6 +5,8 @@ export type Position = {
 
 export type TileType = "wall" | "floor";
 
+export type TileSymbol = "#" | ".";
+
 export type TileGrid = readonly (readonly TileType[])[];
 
 export type LevelData = readonly string[];

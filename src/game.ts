@@ -1,4 +1,12 @@
-import type { Direction, GameState, LevelData, Position, TileGrid, TileType } from "./types";
+import type {
+  Direction,
+  GameState,
+  LevelData,
+  Position,
+  TileGrid,
+  TileSymbol,
+  TileType,
+} from "./types";
 
 type ParsedLevel = {
   tiles: TileGrid;
@@ -12,6 +20,11 @@ const directionOffsets: Record<Direction, Position> = {
   down: { x: 0, y: 1 },
   left: { x: -1, y: 0 },
   right: { x: 1, y: 0 },
+};
+
+const tileTypeBySymbol: Record<TileSymbol, TileType> = {
+  "#": "wall",
+  ".": "floor",
 };
 
 export function parseLevel(level: LevelData): ParsedLevel {
@@ -79,17 +92,20 @@ function parseLevelTile(
   position: Position,
   onPlayerStart: (position: Position) => void,
 ): TileType {
-  switch (symbol) {
-    case "#":
-      return "wall";
-    case ".":
-      return "floor";
-    case "P":
-      onPlayerStart(position);
-      return "floor";
-    default:
-      throw new Error(`Unsupported level symbol "${symbol}" at ${position.x},${position.y}.`);
+  if (isTileSymbol(symbol)) {
+    return tileTypeBySymbol[symbol];
   }
+
+  if (symbol === "P") {
+    onPlayerStart(position);
+    return "floor";
+  }
+
+  throw new Error(`Unsupported level symbol "${symbol}" at ${position.x},${position.y}.`);
+}
+
+function isTileSymbol(symbol: string): symbol is TileSymbol {
+  return symbol === "#" || symbol === ".";
 }
 
 export function createGame(level: LevelData): GameState {
@@ -141,5 +157,9 @@ function canMoveTo(state: GameState, position: Position): boolean {
     return false;
   }
 
-  return state.tiles[position.y][position.x] === "floor";
+  return canEnterTile(state.tiles[position.y][position.x]);
+}
+
+function canEnterTile(tile: TileType): boolean {
+  return tile === "floor";
 }
