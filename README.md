@@ -25,7 +25,7 @@ npm run build
 - Move: WASD or Arrow keys
 - Restart: R
 - Reach the goal to complete the level.
-- Avoid spikes, fire, and acid.
+- Avoid spikes, fire, acid, and dynamite.
 
 ## Map Symbols
 
@@ -36,3 +36,4 @@ npm run build
 - `S` spikes
 - `F` fire
 - `A` acid
+- `D` dynamite

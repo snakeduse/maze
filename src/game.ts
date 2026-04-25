@@ -26,10 +26,13 @@ const tileTypeBySymbol: Record<TileSymbol, TileType> = {
   "#": "wall",
   ".": "floor",
   A: "acid",
+  D: "dynamite",
   F: "fire",
   G: "goal",
   S: "spikes",
 };
+
+const deadlyTiles: readonly TileType[] = ["spikes", "fire", "acid", "dynamite"];
 
 export function parseLevel(level: LevelData): ParsedLevel {
   if (level.length === 0) {
@@ -113,6 +116,7 @@ function isTileSymbol(symbol: string): symbol is TileSymbol {
     symbol === "#" ||
     symbol === "." ||
     symbol === "A" ||
+    symbol === "D" ||
     symbol === "F" ||
     symbol === "G" ||
     symbol === "S"
@@ -192,5 +196,5 @@ function isGoalTile(tile: TileType): boolean {
 }
 
 function isDeadlyTile(tile: TileType): boolean {
-  return tile === "spikes" || tile === "fire" || tile === "acid";
+  return deadlyTiles.includes(tile);
 }

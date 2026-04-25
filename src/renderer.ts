@@ -4,6 +4,7 @@ export const TILE_SIZE = 48;
 
 const colors: Record<TileType | "player", string> = {
   acid: "#6fbf3d",
+  dynamite: "#7d4b2a",
   fire: "#e36b2c",
   floor: "#f4ead7",
   goal: "#8ab65f",
