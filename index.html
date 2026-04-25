@@ -38,6 +38,18 @@
         font-size: 18px;
       }
 
+      .status-panel {
+        min-height: 28px;
+        color: #f8efe0;
+        font-size: 20px;
+        font-weight: 700;
+        text-align: center;
+      }
+
+      .status-panel:empty {
+        visibility: hidden;
+      }
+
       canvas {
         display: block;
         max-width: 100%;
@@ -51,6 +63,7 @@
     <main class="app">
       <h1>Maze</h1>
       <div id="hud" class="hud"></div>
+      <div id="status" class="status-panel" aria-live="polite"></div>
       <canvas id="game" aria-label="Maze game"></canvas>
     </main>
     <script type="module" src="/src/main.ts"></script>

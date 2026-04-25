@@ -32,6 +32,12 @@ npm run build
 - Avoid spikes, fire, acid, and dynamite.
 - Portals `1` and `2` teleport to each other.
 
+## Status Messages
+
+- Death: `You died. Press R to restart.`
+- Level complete: `Level complete. Press N for next level or R to restart.`
+- Game complete: `Game complete. Press R to restart current level.`
+
 ## Map Symbols
 
 - `#` wall

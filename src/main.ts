@@ -2,10 +2,11 @@ import { createGame, movePlayer, resetGame } from "./game";
 import { setupInput } from "./input";
 import { levels } from "./levels";
 import { renderGame, resizeCanvas } from "./renderer";
-import type { Direction, GameState } from "./types";
+import type { Direction, GameState, GameStatus } from "./types";
 
 const canvas = getRequiredElement<HTMLCanvasElement>("#game");
 const hud = getRequiredElement<HTMLDivElement>("#hud");
+const statusPanel = getRequiredElement<HTMLDivElement>("#status");
 
 let currentLevelIndex = 0;
 let gameState = createGame(getCurrentLevel());
@@ -35,7 +36,10 @@ setupInput({
 });
 
 function render(): void {
+  const status = getGameStatus(gameState, currentLevelIndex, levels.length);
+
   updateHud(hud, gameState, currentLevelIndex, levels.length);
+  updateStatusPanel(statusPanel, status);
   renderGame(canvas, gameState);
 }
 
@@ -45,32 +49,51 @@ function updateHud(
   levelIndex: number,
   levelCount: number,
 ): void {
-  const statusText = getStatusText(state, levelIndex, levelCount);
   const keyText = state.hasKey ? "yes" : "no";
   const levelText = `Level: ${levelIndex + 1}/${levelCount}`;
   const controlsText = "Move: WASD or Arrow keys | Restart: R | Next: N after complete";
 
-  element.textContent = `${levelText} | Moves: ${state.moveCount} | Key: ${keyText} | ${controlsText}${statusText}`;
+  element.textContent = `${levelText} | Moves: ${state.moveCount} | Key: ${keyText} | ${controlsText}`;
 }
 
-function getStatusText(state: GameState, levelIndex: number, levelCount: number): string {
-  if (state.isDead) {
-    return " | You died";
+function updateStatusPanel(element: HTMLDivElement, status: GameStatus): void {
+  element.textContent = getStatusMessage(status);
+}
+
+function getStatusMessage(status: GameStatus): string {
+  if (status === "dead") {
+    return "You died. Press R to restart.";
   }
 
-  if (state.isComplete) {
-    if (isLastLevel(levelIndex, levelCount)) {
-      return " | Game complete";
-    }
+  if (status === "levelComplete") {
+    return "Level complete. Press N for next level or R to restart.";
+  }
 
-    return " | Level complete.";
+  if (status === "gameComplete") {
+    return "Game complete. Press R to restart current level.";
   }
 
   return "";
 }
 
+function getGameStatus(state: GameState, levelIndex: number, levelCount: number): GameStatus {
+  if (state.isDead) {
+    return "dead";
+  }
+
+  if (state.isComplete) {
+    if (isLastLevel(levelIndex, levelCount)) {
+      return "gameComplete";
+    }
+
+    return "levelComplete";
+  }
+
+  return "playing";
+}
+
 function canLoadNextLevel(): boolean {
-  return gameState.isComplete && !isLastLevel(currentLevelIndex, levels.length);
+  return getGameStatus(gameState, currentLevelIndex, levels.length) === "levelComplete";
 }
 
 function getCurrentLevel(): (typeof levels)[number] {

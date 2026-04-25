@@ -24,6 +24,8 @@ export type LevelData = readonly string[];
 
 export type Direction = "up" | "down" | "left" | "right";
 
+export type GameStatus = "playing" | "dead" | "levelComplete" | "gameComplete";
+
 export type GameState = {
   tiles: TileGrid;
   width: number;
