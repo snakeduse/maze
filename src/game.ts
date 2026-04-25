@@ -13,8 +13,8 @@ type ParsedLevel = {
   width: number;
   height: number;
   playerStartPosition: Position;
-  portalOnePosition: Position;
-  portalTwoPosition: Position;
+  portalOnePosition: Position | null;
+  portalTwoPosition: Position | null;
 };
 
 const directionOffsets: Record<Direction, Position> = {
@@ -74,14 +74,18 @@ export function parseLevel(level: LevelData): ParsedLevel {
         },
         onPortalOne(position: Position): void {
           if (portalOnePosition !== null) {
-            throw new Error(`Level must contain exactly one portal 1; found another at ${position.x},${position.y}.`);
+            throw new Error(
+              `Level must contain at most one portal 1; found another at ${position.x},${position.y}.`,
+            );
           }
 
           portalOnePosition = position;
         },
         onPortalTwo(position: Position): void {
           if (portalTwoPosition !== null) {
-            throw new Error(`Level must contain exactly one portal 2; found another at ${position.x},${position.y}.`);
+            throw new Error(
+              `Level must contain at most one portal 2; found another at ${position.x},${position.y}.`,
+            );
           }
 
           portalTwoPosition = position;
@@ -94,13 +98,7 @@ export function parseLevel(level: LevelData): ParsedLevel {
     throw new Error("Level must contain exactly one player start position, but none was found.");
   }
 
-  if (portalOnePosition === null) {
-    throw new Error("Level must contain exactly one portal 1, but none was found.");
-  }
-
-  if (portalTwoPosition === null) {
-    throw new Error("Level must contain exactly one portal 2, but none was found.");
-  }
+  validatePortalPair(portalOnePosition, portalTwoPosition);
 
   return {
     tiles,
@@ -160,17 +158,7 @@ function parseLevelTile(
 }
 
 function isTileSymbol(symbol: string): symbol is TileSymbol {
-  return (
-    symbol === "#" ||
-    symbol === "." ||
-    symbol === "1" ||
-    symbol === "2" ||
-    symbol === "A" ||
-    symbol === "D" ||
-    symbol === "F" ||
-    symbol === "G" ||
-    symbol === "S"
-  );
+  return Object.prototype.hasOwnProperty.call(tileTypeBySymbol, symbol);
 }
 
 export function createGame(level: LevelData): GameState {
@@ -182,8 +170,8 @@ export function createGame(level: LevelData): GameState {
     height: parsedLevel.height,
     playerPosition: { ...parsedLevel.playerStartPosition },
     playerStartPosition: { ...parsedLevel.playerStartPosition },
-    portalOnePosition: { ...parsedLevel.portalOnePosition },
-    portalTwoPosition: { ...parsedLevel.portalTwoPosition },
+    portalOnePosition: copyPosition(parsedLevel.portalOnePosition),
+    portalTwoPosition: copyPosition(parsedLevel.portalTwoPosition),
     moveCount: 0,
     isComplete: false,
     isDead: false,
@@ -256,14 +244,53 @@ function isPortalTile(tile: TileType): boolean {
   return tile === "portalOne" || tile === "portalTwo";
 }
 
-function getFinalPositionAfterMove(state: GameState, enteredPosition: Position, tile: TileType): Position {
-  if (tile === "portalOne") {
-    return { ...state.portalTwoPosition };
-  }
+function getFinalPositionAfterMove(
+  state: GameState,
+  enteredPosition: Position,
+  tile: TileType,
+): Position {
+  const portalExitPosition = getPortalExitPosition(state, tile);
 
-  if (tile === "portalTwo") {
-    return { ...state.portalOnePosition };
+  if (portalExitPosition !== null) {
+    return { ...portalExitPosition };
   }
 
   return enteredPosition;
+}
+
+function getPortalExitPosition(state: GameState, tile: TileType): Position | null {
+  if (tile === "portalOne") {
+    return getRequiredPortalPosition(state.portalTwoPosition, "portal 2");
+  }
+
+  if (tile === "portalTwo") {
+    return getRequiredPortalPosition(state.portalOnePosition, "portal 1");
+  }
+
+  return null;
+}
+
+function getRequiredPortalPosition(position: Position | null, name: string): Position {
+  if (position === null) {
+    throw new Error(`Cannot use ${name} because the portal pair is incomplete.`);
+  }
+
+  return position;
+}
+
+function validatePortalPair(
+  portalOnePosition: Position | null,
+  portalTwoPosition: Position | null,
+): void {
+  if (portalOnePosition !== null && portalTwoPosition === null) {
+    throw new Error("Level has portal 1 but is missing portal 2.");
+  }
+
+  if (portalOnePosition === null && portalTwoPosition !== null) {
+    throw new Error("Level has portal 2 but is missing portal 1.");
+  }
+}
+
+function copyPosition(position: Position | null): Position | null {
+  return position === null ? null : { ...position };
 }

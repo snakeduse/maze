@@ -18,7 +18,8 @@ const movementKeys: Record<string, Direction> = {
 
 export function setupInput(handlers: InputHandlers): void {
   window.addEventListener("keydown", (event) => {
-    const direction = movementKeys[event.key.toLowerCase()];
+    const key = event.key.toLowerCase();
+    const direction = movementKeys[key];
 
     if (direction !== undefined) {
       event.preventDefault();
@@ -26,7 +27,7 @@ export function setupInput(handlers: InputHandlers): void {
       return;
     }
 
-    if (event.key === "r" || event.key === "R") {
+    if (key === "r") {
       event.preventDefault();
       handlers.onRestart();
     }

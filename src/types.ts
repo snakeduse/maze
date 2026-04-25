@@ -28,8 +28,8 @@ export type GameState = {
   height: number;
   playerPosition: Position;
   playerStartPosition: Position;
-  portalOnePosition: Position;
-  portalTwoPosition: Position;
+  portalOnePosition: Position | null;
+  portalTwoPosition: Position | null;
   moveCount: number;
   isComplete: boolean;
   isDead: boolean;
