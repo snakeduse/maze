@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maze</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        min-height: 100vh;
+        background: #18202c;
+        color: #f8efe0;
+        font-family: Georgia, "Times New Roman", serif;
+      }
+
+      .app {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 32px 16px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 40px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .hud {
+        color: #e9dcc7;
+        font-size: 18px;
+      }
+
+      canvas {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        border: 4px solid #f8efe0;
+        background: #f4ead7;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <h1>Maze</h1>
+      <div id="hud" class="hud"></div>
+      <canvas id="game" aria-label="Maze game"></canvas>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
