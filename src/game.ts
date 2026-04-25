@@ -25,6 +25,7 @@ const directionOffsets: Record<Direction, Position> = {
 const tileTypeBySymbol: Record<TileSymbol, TileType> = {
   "#": "wall",
   ".": "floor",
+  F: "fire",
   G: "goal",
   S: "spikes",
 };
@@ -107,7 +108,7 @@ function parseLevelTile(
 }
 
 function isTileSymbol(symbol: string): symbol is TileSymbol {
-  return symbol === "#" || symbol === "." || symbol === "G" || symbol === "S";
+  return symbol === "#" || symbol === "." || symbol === "F" || symbol === "G" || symbol === "S";
 }
 
 export function createGame(level: LevelData): GameState {
@@ -175,7 +176,7 @@ function canMoveTo(state: GameState, position: Position): boolean {
 }
 
 function canEnterTile(tile: TileType): boolean {
-  return tile === "floor" || tile === "goal" || tile === "spikes";
+  return tile === "floor" || tile === "goal" || isDeadlyTile(tile);
 }
 
 function isGoalTile(tile: TileType): boolean {
@@ -183,5 +184,5 @@ function isGoalTile(tile: TileType): boolean {
 }
 
 function isDeadlyTile(tile: TileType): boolean {
-  return tile === "spikes";
+  return tile === "spikes" || tile === "fire";
 }

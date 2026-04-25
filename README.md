@@ -25,7 +25,7 @@ npm run build
 - Move: WASD or Arrow keys
 - Restart: R
 - Reach the goal to complete the level.
-- Avoid spikes.
+- Avoid spikes and fire.
 
 ## Map Symbols
 
@@ -34,3 +34,4 @@ npm run build
 - `P` player start position
 - `G` goal
 - `S` spikes
+- `F` fire
