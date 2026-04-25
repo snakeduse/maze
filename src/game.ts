@@ -26,6 +26,7 @@ const tileTypeBySymbol: Record<TileSymbol, TileType> = {
   "#": "wall",
   ".": "floor",
   G: "goal",
+  S: "spikes",
 };
 
 export function parseLevel(level: LevelData): ParsedLevel {
@@ -106,7 +107,7 @@ function parseLevelTile(
 }
 
 function isTileSymbol(symbol: string): symbol is TileSymbol {
-  return symbol === "#" || symbol === "." || symbol === "G";
+  return symbol === "#" || symbol === "." || symbol === "G" || symbol === "S";
 }
 
 export function createGame(level: LevelData): GameState {
@@ -120,6 +121,7 @@ export function createGame(level: LevelData): GameState {
     playerStartPosition: { ...parsedLevel.playerStartPosition },
     moveCount: 0,
     isComplete: false,
+    isDead: false,
   };
 }
 
@@ -129,11 +131,12 @@ export function resetGame(state: GameState): GameState {
     playerPosition: { ...state.playerStartPosition },
     moveCount: 0,
     isComplete: false,
+    isDead: false,
   };
 }
 
 export function movePlayer(state: GameState, direction: Direction): GameState {
-  if (state.isComplete) {
+  if (state.isComplete || state.isDead) {
     return state;
   }
 
@@ -154,6 +157,7 @@ export function movePlayer(state: GameState, direction: Direction): GameState {
     playerPosition: nextPosition,
     moveCount: state.moveCount + 1,
     isComplete: isGoalTile(nextTile),
+    isDead: isSpikesTile(nextTile),
   };
 }
 
@@ -171,9 +175,13 @@ function canMoveTo(state: GameState, position: Position): boolean {
 }
 
 function canEnterTile(tile: TileType): boolean {
-  return tile === "floor" || tile === "goal";
+  return tile === "floor" || tile === "goal" || tile === "spikes";
 }
 
 function isGoalTile(tile: TileType): boolean {
   return tile === "goal";
+}
+
+function isSpikesTile(tile: TileType): boolean {
+  return tile === "spikes";
 }

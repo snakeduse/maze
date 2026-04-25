@@ -29,9 +29,21 @@ function render(): void {
 }
 
 function updateHud(element: HTMLDivElement, state: GameState): void {
-  const completeText = state.isComplete ? " | Level complete." : "";
+  const statusText = getStatusText(state);
 
-  element.textContent = `Moves: ${state.moveCount} | Move: WASD or Arrow keys | Restart: R${completeText}`;
+  element.textContent = `Moves: ${state.moveCount} | Move: WASD or Arrow keys | Restart: R${statusText}`;
+}
+
+function getStatusText(state: GameState): string {
+  if (state.isDead) {
+    return " | You died";
+  }
+
+  if (state.isComplete) {
+    return " | Level complete.";
+  }
+
+  return "";
 }
 
 function getRequiredElement<T extends Element>(selector: string): T {

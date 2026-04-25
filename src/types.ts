@@ -3,9 +3,9 @@ export type Position = {
   y: number;
 };
 
-export type TileType = "wall" | "floor" | "goal";
+export type TileType = "wall" | "floor" | "goal" | "spikes";
 
-export type TileSymbol = "#" | "." | "G";
+export type TileSymbol = "#" | "." | "G" | "S";
 
 export type TileGrid = readonly (readonly TileType[])[];
 
@@ -21,4 +21,5 @@ export type GameState = {
   playerStartPosition: Position;
   moveCount: number;
   isComplete: boolean;
+  isDead: boolean;
 };
