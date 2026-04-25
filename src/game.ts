@@ -25,6 +25,7 @@ const directionOffsets: Record<Direction, Position> = {
 const tileTypeBySymbol: Record<TileSymbol, TileType> = {
   "#": "wall",
   ".": "floor",
+  G: "goal",
 };
 
 export function parseLevel(level: LevelData): ParsedLevel {
@@ -105,7 +106,7 @@ function parseLevelTile(
 }
 
 function isTileSymbol(symbol: string): symbol is TileSymbol {
-  return symbol === "#" || symbol === ".";
+  return symbol === "#" || symbol === "." || symbol === "G";
 }
 
 export function createGame(level: LevelData): GameState {
@@ -118,6 +119,7 @@ export function createGame(level: LevelData): GameState {
     playerPosition: { ...parsedLevel.playerStartPosition },
     playerStartPosition: { ...parsedLevel.playerStartPosition },
     moveCount: 0,
+    isComplete: false,
   };
 }
 
@@ -126,10 +128,15 @@ export function resetGame(state: GameState): GameState {
     ...state,
     playerPosition: { ...state.playerStartPosition },
     moveCount: 0,
+    isComplete: false,
   };
 }
 
 export function movePlayer(state: GameState, direction: Direction): GameState {
+  if (state.isComplete) {
+    return state;
+  }
+
   const offset = directionOffsets[direction];
   const nextPosition = {
     x: state.playerPosition.x + offset.x,
@@ -140,10 +147,13 @@ export function movePlayer(state: GameState, direction: Direction): GameState {
     return state;
   }
 
+  const nextTile = state.tiles[nextPosition.y][nextPosition.x];
+
   return {
     ...state,
     playerPosition: nextPosition,
     moveCount: state.moveCount + 1,
+    isComplete: isGoalTile(nextTile),
   };
 }
 
@@ -161,5 +171,9 @@ function canMoveTo(state: GameState, position: Position): boolean {
 }
 
 function canEnterTile(tile: TileType): boolean {
-  return tile === "floor";
+  return tile === "floor" || tile === "goal";
+}
+
+function isGoalTile(tile: TileType): boolean {
+  return tile === "goal";
 }

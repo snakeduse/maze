@@ -4,6 +4,7 @@ export const TILE_SIZE = 48;
 
 const colors: Record<TileType | "player", string> = {
   floor: "#f4ead7",
+  goal: "#8ab65f",
   wall: "#2f3a4a",
   player: "#d65a31",
 };
@@ -38,7 +39,7 @@ function drawTile(context: CanvasRenderingContext2D, tile: TileType, x: number, 
   context.fillStyle = colors[tile];
   context.fillRect(tileX, tileY, TILE_SIZE, TILE_SIZE);
 
-  if (tile === "floor") {
+  if (tile !== "wall") {
     context.strokeStyle = "#e2d2b8";
     context.strokeRect(tileX, tileY, TILE_SIZE, TILE_SIZE);
   }

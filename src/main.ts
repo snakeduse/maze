@@ -29,7 +29,9 @@ function render(): void {
 }
 
 function updateHud(element: HTMLDivElement, state: GameState): void {
-  element.textContent = `Moves: ${state.moveCount} | Move: WASD or Arrow keys | Restart: R`;
+  const completeText = state.isComplete ? " | Level complete." : "";
+
+  element.textContent = `Moves: ${state.moveCount} | Move: WASD or Arrow keys | Restart: R${completeText}`;
 }
 
 function getRequiredElement<T extends Element>(selector: string): T {

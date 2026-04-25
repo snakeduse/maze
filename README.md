@@ -24,9 +24,11 @@ npm run build
 
 - Move: WASD or Arrow keys
 - Restart: R
+- Reach the goal to complete the level.
 
 ## Map Symbols
 
 - `#` wall
 - `.` floor
 - `P` player start position
+- `G` goal
