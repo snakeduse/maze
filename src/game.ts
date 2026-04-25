@@ -157,7 +157,7 @@ export function movePlayer(state: GameState, direction: Direction): GameState {
     playerPosition: nextPosition,
     moveCount: state.moveCount + 1,
     isComplete: isGoalTile(nextTile),
-    isDead: isSpikesTile(nextTile),
+    isDead: isDeadlyTile(nextTile),
   };
 }
 
@@ -182,6 +182,6 @@ function isGoalTile(tile: TileType): boolean {
   return tile === "goal";
 }
 
-function isSpikesTile(tile: TileType): boolean {
+function isDeadlyTile(tile: TileType): boolean {
   return tile === "spikes";
 }
