@@ -2,6 +2,8 @@
 
 A small 2D browser maze game built with Vite, TypeScript, and HTML Canvas.
 
+The game has multiple levels. Complete the current level, then press `N` to load the next one.
+
 ## Install
 
 ```sh
@@ -23,7 +25,8 @@ npm run build
 ## Controls
 
 - Move: WASD or Arrow keys
-- Restart: R
+- Restart current level: R
+- Next level after completion: N
 - Reach the goal to complete the level.
 - Collect the key to unlock the locked door.
 - Avoid spikes, fire, acid, and dynamite.

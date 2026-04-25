@@ -2,6 +2,7 @@ import type { Direction } from "./types";
 
 type InputHandlers = {
   onMove: (direction: Direction) => void;
+  onNextLevel: () => void;
   onRestart: () => void;
 };
 
@@ -30,6 +31,12 @@ export function setupInput(handlers: InputHandlers): void {
     if (key === "r") {
       event.preventDefault();
       handlers.onRestart();
+      return;
+    }
+
+    if (key === "n") {
+      event.preventDefault();
+      handlers.onNextLevel();
     }
   });
 }
