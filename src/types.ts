@@ -3,9 +3,9 @@ export type Position = {
   y: number;
 };
 
-export type TileType = "wall" | "floor" | "goal" | "spikes" | "fire";
+export type TileType = "wall" | "floor" | "goal" | "spikes" | "fire" | "acid";
 
-export type TileSymbol = "#" | "." | "G" | "S" | "F";
+export type TileSymbol = "#" | "." | "G" | "S" | "F" | "A";
 
 export type TileGrid = readonly (readonly TileType[])[];
 

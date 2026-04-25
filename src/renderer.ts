@@ -3,6 +3,7 @@ import type { GameState, TileType } from "./types";
 export const TILE_SIZE = 48;
 
 const colors: Record<TileType | "player", string> = {
+  acid: "#6fbf3d",
   fire: "#e36b2c",
   floor: "#f4ead7",
   goal: "#8ab65f",
