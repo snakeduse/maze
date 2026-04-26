@@ -36,7 +36,9 @@ npm run build
 - Next level after completion: N
 - Reach the goal to complete the level.
 - Collect the key to unlock the locked door.
-- Avoid spikes, fire, acid, and dynamite.
+- The player starts each level with 100% health.
+- Spikes deal 10% damage, fire deals 70%, acid deals 50%, and dynamite deals 90%.
+- Avoid losing all health.
 - Portals `1` and `2` teleport to each other.
 
 ## Status Messages

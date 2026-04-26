@@ -38,7 +38,14 @@ const tileTypeBySymbol: Record<TileSymbol, TileType> = {
   S: "spikes",
 };
 
-const deadlyTiles: readonly TileType[] = ["spikes", "fire", "acid", "dynamite"];
+const initialHealthPercent = 100;
+
+const damageByDeadlyTile: Partial<Record<TileType, number>> = {
+  acid: 50,
+  dynamite: 90,
+  fire: 70,
+  spikes: 10,
+};
 
 export function parseLevel(level: LevelData): ParsedLevel {
   if (level.length === 0) {
@@ -203,6 +210,7 @@ export function createGame(level: LevelData): GameState {
     portalOnePosition: copyPosition(parsedLevel.portalOnePosition),
     portalTwoPosition: copyPosition(parsedLevel.portalTwoPosition),
     moveCount: 0,
+    healthPercent: initialHealthPercent,
     hasKey: false,
     isComplete: false,
     isDead: false,
@@ -214,6 +222,7 @@ export function resetGame(state: GameState): GameState {
     ...state,
     playerPosition: { ...state.playerStartPosition },
     moveCount: 0,
+    healthPercent: initialHealthPercent,
     hasKey: false,
     isComplete: false,
     isDead: false,
@@ -238,14 +247,17 @@ export function movePlayer(state: GameState, direction: Direction): GameState {
   const nextTile = state.tiles[nextPosition.y][nextPosition.x];
   const playerPosition = getFinalPositionAfterMove(state, nextPosition, nextTile);
   const hasKey = state.hasKey || isKeyTile(nextTile);
+  const healthPercent = getHealthAfterEnteringTile(state.healthPercent, nextTile);
+  const isDead = healthPercent === 0;
 
   return {
     ...state,
     playerPosition,
     moveCount: state.moveCount + 1,
+    healthPercent,
     hasKey,
-    isComplete: isCompletionTile(nextTile, hasKey),
-    isDead: isDeadlyTile(nextTile),
+    isComplete: !isDead && isCompletionTile(nextTile, hasKey),
+    isDead,
   };
 }
 
@@ -281,7 +293,7 @@ function isCompletionTile(tile: TileType, hasKey: boolean): boolean {
 }
 
 function isDeadlyTile(tile: TileType): boolean {
-  return deadlyTiles.includes(tile);
+  return getDeadlyTileDamage(tile) > 0;
 }
 
 function isPortalTile(tile: TileType): boolean {
@@ -290,6 +302,14 @@ function isPortalTile(tile: TileType): boolean {
 
 function isKeyTile(tile: TileType): boolean {
   return tile === "key";
+}
+
+function getHealthAfterEnteringTile(healthPercent: number, tile: TileType): number {
+  return Math.max(0, healthPercent - getDeadlyTileDamage(tile));
+}
+
+function getDeadlyTileDamage(tile: TileType): number {
+  return damageByDeadlyTile[tile] ?? 0;
 }
 
 function getFinalPositionAfterMove(

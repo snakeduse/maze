@@ -7,6 +7,9 @@ import type { Direction, GameState, GameStatus } from "./types";
 
 const canvas = getRequiredElement<HTMLCanvasElement>("#game");
 const hud = getRequiredElement<HTMLDivElement>("#hud");
+const healthTrack = getRequiredElement<HTMLDivElement>(".health-track");
+const healthFill = getRequiredElement<HTMLDivElement>("#health-fill");
+const healthValue = getRequiredElement<HTMLDivElement>("#health-value");
 const statusPanel = getRequiredElement<HTMLDivElement>("#status");
 
 let currentLevelIndex = 0;
@@ -45,6 +48,7 @@ async function init(): Promise<void> {
     const status = getGameStatus(gameState, currentLevelIndex, levels.length);
 
     updateHud(hud, gameState, currentLevelIndex, levels.length);
+    updateHealthBar(healthTrack, healthFill, healthValue, gameState);
     updateStatusPanel(statusPanel, status);
     renderGame(canvas, gameState, assets);
   }
@@ -61,6 +65,19 @@ function updateHud(
   const controlsText = "Move: WASD or Arrow keys | Restart: R | Next: N after complete";
 
   element.textContent = `${levelText} | Moves: ${state.moveCount} | Key: ${keyText} | ${controlsText}`;
+}
+
+function updateHealthBar(
+  trackElement: HTMLDivElement,
+  fillElement: HTMLDivElement,
+  valueElement: HTMLDivElement,
+  state: GameState,
+): void {
+  const healthText = `${state.healthPercent}%`;
+
+  trackElement.setAttribute("aria-valuenow", String(state.healthPercent));
+  fillElement.style.width = healthText;
+  valueElement.textContent = `Health: ${healthText}`;
 }
 
 function updateStatusPanel(element: HTMLDivElement, status: GameStatus): void {
