@@ -13,7 +13,9 @@ export type GameAssets = {
   wall: HTMLImageElement | null;
 };
 
-const assetPaths: Record<keyof GameAssets, string> = {
+export type GameAssetKey = keyof GameAssets;
+
+const assetPaths: Record<GameAssetKey, string> = {
   acid: "/assets/tiny-dungeon/acid.png",
   door: "/assets/tiny-dungeon/door.png",
   dynamite: "/assets/tiny-dungeon/dynamite.png",
@@ -29,15 +31,26 @@ const assetPaths: Record<keyof GameAssets, string> = {
 };
 
 export async function loadAssets(): Promise<GameAssets> {
-  const entries = await Promise.all(
-    Object.entries(assetPaths).map(async ([assetName, assetPath]) => {
-      const image = await loadImage(assetPath);
+  const assets: GameAssets = {
+    acid: null,
+    door: null,
+    dynamite: null,
+    fire: null,
+    floor: null,
+    goal: null,
+    key: null,
+    player: null,
+    portal1: null,
+    portal2: null,
+    spikes: null,
+    wall: null,
+  };
 
-      return [assetName, image] as const;
-    }),
-  );
+  for (const assetKey of getAssetKeys()) {
+    assets[assetKey] = await loadImage(assetPaths[assetKey]);
+  }
 
-  return Object.fromEntries(entries) as GameAssets;
+  return assets;
 }
 
 function loadImage(path: string): Promise<HTMLImageElement | null> {
@@ -54,4 +67,8 @@ function loadImage(path: string): Promise<HTMLImageElement | null> {
 
     image.src = path;
   });
+}
+
+function getAssetKeys(): GameAssetKey[] {
+  return Object.keys(assetPaths) as GameAssetKey[];
 }

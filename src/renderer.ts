@@ -1,4 +1,4 @@
-import type { GameAssets } from "./assets";
+import type { GameAssetKey, GameAssets } from "./assets";
 import type { GameState, TileType } from "./types";
 
 export const TILE_SIZE = 48;
@@ -27,6 +27,20 @@ const colors = {
   symbol: "#f8efe0",
   wall: "#2f3a4a",
   wallHighlight: "#526073",
+};
+
+const tileAssetByType: Partial<Record<TileType, GameAssetKey>> = {
+  acid: "acid",
+  dynamite: "dynamite",
+  fire: "fire",
+  floor: "floor",
+  goal: "goal",
+  key: "key",
+  lockedDoor: "door",
+  portalOne: "portal1",
+  portalTwo: "portal2",
+  spikes: "spikes",
+  wall: "wall",
 };
 
 export function resizeCanvas(canvas: HTMLCanvasElement, state: GameState): void {
@@ -144,32 +158,16 @@ function drawTileWithImage(
   assets: GameAssets,
 ): boolean {
   if (tile === "wall") {
-    return drawImageTile(context, assets.wall, tileX, tileY);
+    return drawImageTile(context, getTileImage(assets, tile), tileX, tileY);
   }
 
-  const hasFloor = drawImageTile(context, assets.floor, tileX, tileY);
+  const hasFloor = drawImageTile(context, getTileImage(assets, "floor"), tileX, tileY);
 
   switch (tile) {
     case "floor":
       return hasFloor;
-    case "goal":
-      return hasFloor && drawImageTile(context, assets.goal, tileX, tileY);
-    case "spikes":
-      return hasFloor && drawImageTile(context, assets.spikes, tileX, tileY);
-    case "fire":
-      return hasFloor && drawImageTile(context, assets.fire, tileX, tileY);
-    case "acid":
-      return hasFloor && drawImageTile(context, assets.acid, tileX, tileY);
-    case "dynamite":
-      return hasFloor && drawImageTile(context, assets.dynamite, tileX, tileY);
-    case "portalOne":
-      return hasFloor && drawImageTile(context, assets.portal1, tileX, tileY);
-    case "portalTwo":
-      return hasFloor && drawImageTile(context, assets.portal2, tileX, tileY);
-    case "key":
-      return hasFloor && drawImageTile(context, assets.key, tileX, tileY);
-    case "lockedDoor":
-      return hasFloor && drawImageTile(context, assets.door, tileX, tileY);
+    default:
+      return hasFloor && drawImageTile(context, getTileImage(assets, tile), tileX, tileY);
   }
 }
 
@@ -357,4 +355,10 @@ function drawTileLabel(
   context.textAlign = "center";
   context.textBaseline = "middle";
   context.fillText(label, tileX + TILE_SIZE / 2, tileY + TILE_SIZE / 2);
+}
+
+function getTileImage(assets: GameAssets, tile: TileType): HTMLImageElement | null {
+  const assetKey = tileAssetByType[tile];
+
+  return assetKey === undefined ? null : assets[assetKey];
 }
