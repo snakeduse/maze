@@ -1,3 +1,4 @@
+import { loadAssets } from "./assets";
 import { createGame, movePlayer, resetGame } from "./game";
 import { setupInput } from "./input";
 import { levels } from "./levels";
@@ -11,36 +12,42 @@ const statusPanel = getRequiredElement<HTMLDivElement>("#status");
 let currentLevelIndex = 0;
 let gameState = createGame(getCurrentLevel());
 
-resizeCanvas(canvas, gameState);
-render();
+void init();
 
-setupInput({
-  onMove(direction: Direction): void {
-    gameState = movePlayer(gameState, direction);
-    render();
-  },
-  onNextLevel(): void {
-    if (!canLoadNextLevel()) {
-      return;
-    }
+async function init(): Promise<void> {
+  const assets = await loadAssets();
 
-    currentLevelIndex += 1;
-    gameState = createGame(getCurrentLevel());
-    resizeCanvas(canvas, gameState);
-    render();
-  },
-  onRestart(): void {
-    gameState = resetGame(gameState);
-    render();
-  },
-});
+  resizeCanvas(canvas, gameState);
+  render();
 
-function render(): void {
-  const status = getGameStatus(gameState, currentLevelIndex, levels.length);
+  setupInput({
+    onMove(direction: Direction): void {
+      gameState = movePlayer(gameState, direction);
+      render();
+    },
+    onNextLevel(): void {
+      if (!canLoadNextLevel()) {
+        return;
+      }
 
-  updateHud(hud, gameState, currentLevelIndex, levels.length);
-  updateStatusPanel(statusPanel, status);
-  renderGame(canvas, gameState);
+      currentLevelIndex += 1;
+      gameState = createGame(getCurrentLevel());
+      resizeCanvas(canvas, gameState);
+      render();
+    },
+    onRestart(): void {
+      gameState = resetGame(gameState);
+      render();
+    },
+  });
+
+  function render(): void {
+    const status = getGameStatus(gameState, currentLevelIndex, levels.length);
+
+    updateHud(hud, gameState, currentLevelIndex, levels.length);
+    updateStatusPanel(statusPanel, status);
+    renderGame(canvas, gameState, assets);
+  }
 }
 
 function updateHud(

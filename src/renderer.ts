@@ -1,3 +1,4 @@
+import type { GameAssets } from "./assets";
 import type { GameState, TileType } from "./types";
 
 export const TILE_SIZE = 48;
@@ -33,27 +34,38 @@ export function resizeCanvas(canvas: HTMLCanvasElement, state: GameState): void 
   canvas.height = state.height * TILE_SIZE;
 }
 
-export function renderGame(canvas: HTMLCanvasElement, state: GameState): void {
+export function renderGame(canvas: HTMLCanvasElement, state: GameState, assets: GameAssets): void {
   const context = canvas.getContext("2d");
 
   if (context === null) {
     throw new Error("Canvas 2D context is not available.");
   }
 
+  context.imageSmoothingEnabled = false;
   context.clearRect(0, 0, canvas.width, canvas.height);
 
   for (let y = 0; y < state.height; y += 1) {
     for (let x = 0; x < state.width; x += 1) {
-      drawTile(context, getRenderedTile(state.tiles[y][x], state), x, y);
+      drawTile(context, getRenderedTile(state.tiles[y][x], state), x, y, assets);
     }
   }
 
-  drawPlayer(context, state);
+  drawPlayer(context, state, assets);
 }
 
-function drawTile(context: CanvasRenderingContext2D, tile: TileType, x: number, y: number): void {
+function drawTile(
+  context: CanvasRenderingContext2D,
+  tile: TileType,
+  x: number,
+  y: number,
+  assets: GameAssets,
+): void {
   const tileX = x * TILE_SIZE;
   const tileY = y * TILE_SIZE;
+
+  if (drawTileWithImage(context, tile, tileX, tileY, assets)) {
+    return;
+  }
 
   drawFloorTile(context, tileX, tileY);
 
@@ -103,9 +115,16 @@ function getRenderedTile(tile: TileType, state: GameState): TileType {
   return tile;
 }
 
-function drawPlayer(context: CanvasRenderingContext2D, state: GameState): void {
-  const centerX = state.playerPosition.x * TILE_SIZE + TILE_SIZE / 2;
-  const centerY = state.playerPosition.y * TILE_SIZE + TILE_SIZE / 2;
+function drawPlayer(context: CanvasRenderingContext2D, state: GameState, assets: GameAssets): void {
+  const tileX = state.playerPosition.x * TILE_SIZE;
+  const tileY = state.playerPosition.y * TILE_SIZE;
+
+  if (drawImageTile(context, assets.player, tileX, tileY)) {
+    return;
+  }
+
+  const centerX = tileX + TILE_SIZE / 2;
+  const centerY = tileY + TILE_SIZE / 2;
   const radius = TILE_SIZE * 0.32;
 
   context.fillStyle = colors.player;
@@ -115,6 +134,57 @@ function drawPlayer(context: CanvasRenderingContext2D, state: GameState): void {
   context.lineWidth = 3;
   context.strokeStyle = colors.playerOutline;
   context.stroke();
+}
+
+function drawTileWithImage(
+  context: CanvasRenderingContext2D,
+  tile: TileType,
+  tileX: number,
+  tileY: number,
+  assets: GameAssets,
+): boolean {
+  if (tile === "wall") {
+    return drawImageTile(context, assets.wall, tileX, tileY);
+  }
+
+  const hasFloor = drawImageTile(context, assets.floor, tileX, tileY);
+
+  switch (tile) {
+    case "floor":
+      return hasFloor;
+    case "goal":
+      return hasFloor && drawImageTile(context, assets.goal, tileX, tileY);
+    case "spikes":
+      return hasFloor && drawImageTile(context, assets.spikes, tileX, tileY);
+    case "fire":
+      return hasFloor && drawImageTile(context, assets.fire, tileX, tileY);
+    case "acid":
+      return hasFloor && drawImageTile(context, assets.acid, tileX, tileY);
+    case "dynamite":
+      return hasFloor && drawImageTile(context, assets.dynamite, tileX, tileY);
+    case "portalOne":
+      return hasFloor && drawImageTile(context, assets.portal1, tileX, tileY);
+    case "portalTwo":
+      return hasFloor && drawImageTile(context, assets.portal2, tileX, tileY);
+    case "key":
+      return hasFloor && drawImageTile(context, assets.key, tileX, tileY);
+    case "lockedDoor":
+      return hasFloor && drawImageTile(context, assets.door, tileX, tileY);
+  }
+}
+
+function drawImageTile(
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement | null,
+  tileX: number,
+  tileY: number,
+): boolean {
+  if (image === null) {
+    return false;
+  }
+
+  context.drawImage(image, tileX, tileY, TILE_SIZE, TILE_SIZE);
+  return true;
 }
 
 function drawFloorTile(context: CanvasRenderingContext2D, tileX: number, tileY: number): void {
