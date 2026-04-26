@@ -4,9 +4,9 @@ import type {
   LevelData,
   Position,
   TileGrid,
-  TileSymbol,
   TileType,
 } from "./types";
+import { isTileSymbol, tileTypeBySymbol } from "./levelFormat";
 
 type ParsedLevel = {
   tiles: TileGrid;
@@ -22,20 +22,6 @@ const directionOffsets: Record<Direction, Position> = {
   down: { x: 0, y: 1 },
   left: { x: -1, y: 0 },
   right: { x: 1, y: 0 },
-};
-
-const tileTypeBySymbol: Record<TileSymbol, TileType> = {
-  "#": "wall",
-  ".": "floor",
-  "1": "portalOne",
-  "2": "portalTwo",
-  A: "acid",
-  D: "dynamite",
-  F: "fire",
-  G: "goal",
-  K: "key",
-  L: "lockedDoor",
-  S: "spikes",
 };
 
 const initialHealthPercent = 100;
@@ -192,10 +178,6 @@ function parseLevelTile(
   }
 
   throw new Error(`Unsupported level symbol "${symbol}" at ${position.x},${position.y}.`);
-}
-
-function isTileSymbol(symbol: string): symbol is TileSymbol {
-  return Object.prototype.hasOwnProperty.call(tileTypeBySymbol, symbol);
 }
 
 export function createGame(level: LevelData): GameState {

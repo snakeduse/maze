@@ -1,4 +1,5 @@
 import { loadAssets } from "./assets";
+import { setupMazeEditor } from "./editor";
 import { createGame, movePlayer, resetGame } from "./game";
 import { setupInput } from "./input";
 import { levels } from "./levels";
@@ -6,29 +7,74 @@ import { renderGame, resizeCanvas } from "./renderer";
 import type { Direction, GameState, GameStatus } from "./types";
 
 const canvas = getRequiredElement<HTMLCanvasElement>("#game");
+const gameScreen = getRequiredElement<HTMLElement>("#game-screen");
+const editorScreen = getRequiredElement<HTMLElement>("#editor-screen");
+const showGameButton = getRequiredElement<HTMLButtonElement>("#show-game");
+const showEditorButton = getRequiredElement<HTMLButtonElement>("#show-editor");
 const hud = getRequiredElement<HTMLDivElement>("#hud");
 const healthTrack = getRequiredElement<HTMLDivElement>(".health-track");
 const healthFill = getRequiredElement<HTMLDivElement>("#health-fill");
 const healthValue = getRequiredElement<HTMLDivElement>("#health-value");
 const statusPanel = getRequiredElement<HTMLDivElement>("#status");
+const editorWidthInput = getRequiredElement<HTMLInputElement>("#editor-width");
+const editorHeightInput = getRequiredElement<HTMLInputElement>("#editor-height");
+const editorAddRowButton = getRequiredElement<HTMLButtonElement>("#editor-add-row");
+const editorRemoveRowButton = getRequiredElement<HTMLButtonElement>("#editor-remove-row");
+const editorAddColumnButton = getRequiredElement<HTMLButtonElement>("#editor-add-column");
+const editorRemoveColumnButton = getRequiredElement<HTMLButtonElement>("#editor-remove-column");
+const editorToolbar = getRequiredElement<HTMLDivElement>("#editor-toolbar");
+const editorGrid = getRequiredElement<HTMLDivElement>("#editor-grid");
+const editorExportButton = getRequiredElement<HTMLButtonElement>("#editor-export-button");
+const editorExportOutput = getRequiredElement<HTMLTextAreaElement>("#editor-export");
+const editorValidationOutput = getRequiredElement<HTMLDivElement>("#editor-validation");
+
+type AppScreen = "game" | "editor";
 
 let currentLevelIndex = 0;
 let gameState = createGame(getCurrentLevel());
+let activeScreen: AppScreen = getScreenFromHash();
 
 void init();
 
 async function init(): Promise<void> {
   const assets = await loadAssets();
 
+  setupMazeEditor(
+    {
+      widthInput: editorWidthInput,
+      heightInput: editorHeightInput,
+      addRowButton: editorAddRowButton,
+      removeRowButton: editorRemoveRowButton,
+      addColumnButton: editorAddColumnButton,
+      removeColumnButton: editorRemoveColumnButton,
+      toolbar: editorToolbar,
+      grid: editorGrid,
+      exportButton: editorExportButton,
+      exportOutput: editorExportOutput,
+      validationOutput: editorValidationOutput,
+    },
+    levels[0],
+  );
+  setupScreenNavigation();
+  updateActiveScreen(activeScreen);
+
   resizeCanvas(canvas, gameState);
   render();
 
   setupInput({
     onMove(direction: Direction): void {
+      if (activeScreen !== "game") {
+        return;
+      }
+
       gameState = movePlayer(gameState, direction);
       render();
     },
     onNextLevel(): void {
+      if (activeScreen !== "game") {
+        return;
+      }
+
       if (!canLoadNextLevel()) {
         return;
       }
@@ -39,6 +85,10 @@ async function init(): Promise<void> {
       render();
     },
     onRestart(): void {
+      if (activeScreen !== "game") {
+        return;
+      }
+
       gameState = resetGame(gameState);
       render();
     },
@@ -52,6 +102,26 @@ async function init(): Promise<void> {
     updateStatusPanel(statusPanel, status);
     renderGame(canvas, gameState, assets);
   }
+}
+
+function setupScreenNavigation(): void {
+  showGameButton.addEventListener("click", () => {
+    window.location.hash = "";
+  });
+  showEditorButton.addEventListener("click", () => {
+    window.location.hash = "editor";
+  });
+  window.addEventListener("hashchange", () => {
+    activeScreen = getScreenFromHash();
+    updateActiveScreen(activeScreen);
+  });
+}
+
+function updateActiveScreen(screen: AppScreen): void {
+  gameScreen.hidden = screen !== "game";
+  editorScreen.hidden = screen !== "editor";
+  showGameButton.classList.toggle("nav-button-active", screen === "game");
+  showEditorButton.classList.toggle("nav-button-active", screen === "editor");
 }
 
 function updateHud(
@@ -118,6 +188,10 @@ function getGameStatus(state: GameState, levelIndex: number, levelCount: number)
 
 function canLoadNextLevel(): boolean {
   return getGameStatus(gameState, currentLevelIndex, levels.length) === "levelComplete";
+}
+
+function getScreenFromHash(): AppScreen {
+  return window.location.hash === "#editor" ? "editor" : "game";
 }
 
 function getCurrentLevel(): (typeof levels)[number] {

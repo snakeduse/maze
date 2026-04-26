@@ -18,6 +18,8 @@ export type TileType =
 
 export type TileSymbol = "#" | "." | "G" | "S" | "F" | "A" | "D" | "1" | "2" | "K" | "L";
 
+export type LevelSymbol = TileSymbol | "P";
+
 export type TileGrid = readonly (readonly TileType[])[];
 
 export type LevelData = readonly string[];

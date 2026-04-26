@@ -1,102 +1,341 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Maze</title>
-    <style>
-      * {
-        box-sizing: border-box;
-      }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Maze</title>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
 
-      body {
-        margin: 0;
-        min-width: 320px;
-        min-height: 100vh;
-        background: #18202c;
-        color: #f8efe0;
-        font-family: Georgia, "Times New Roman", serif;
-      }
+            body {
+                margin: 0;
+                min-width: 320px;
+                min-height: 100vh;
+                background: #18202c;
+                color: #f8efe0;
+                font-family: Georgia, "Times New Roman", serif;
+            }
 
-      .app {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
-        padding: 32px 16px;
-      }
+            .app {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 16px;
+                padding: 32px 16px;
+            }
 
-      h1 {
-        margin: 0;
-        font-size: 40px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
+            .nav {
+                display: flex;
+                gap: 8px;
+            }
 
-      .hud {
-        color: #e9dcc7;
-        font-size: 18px;
-      }
+            .nav-button,
+            .editor-tool,
+            .editor-size-button,
+            .editor-export-button {
+                border: 2px solid #f8efe0;
+                background: #2f3a4a;
+                color: #f8efe0;
+                cursor: pointer;
+                font: inherit;
+                padding: 8px 12px;
+            }
 
-      .health {
-        width: min(100%, 360px);
-      }
+            .nav-button-active,
+            .editor-tool-selected {
+                background: #d92027;
+            }
 
-      .health-track {
-        width: 100%;
-        height: 18px;
-        overflow: hidden;
-        border: 2px solid #f8efe0;
-        background: #392d2d;
-      }
+            .screen {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 16px;
+                width: 100%;
+            }
 
-      .health-fill {
-        width: 100%;
-        height: 100%;
-        background: #d92027;
-      }
+            .screen[hidden] {
+                display: none;
+            }
 
-      .health-value {
-        margin-top: 6px;
-        color: #e9dcc7;
-        font-size: 16px;
-        text-align: center;
-      }
+            h1 {
+                margin: 0;
+                font-size: 40px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
 
-      .status-panel {
-        min-height: 28px;
-        color: #f8efe0;
-        font-size: 20px;
-        font-weight: 700;
-        text-align: center;
-      }
+            .hud {
+                color: #e9dcc7;
+                font-size: 18px;
+            }
 
-      .status-panel:empty {
-        visibility: hidden;
-      }
+            .health {
+                width: min(100%, 360px);
+            }
 
-      canvas {
-        display: block;
-        max-width: 100%;
-        height: auto;
-        border: 4px solid #f8efe0;
-        background: #f4ead7;
-      }
-    </style>
-  </head>
-  <body>
-    <main class="app">
-      <h1>Maze</h1>
-      <div id="hud" class="hud"></div>
-      <div class="health" aria-label="Player health">
-        <div class="health-track" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
-          <div id="health-fill" class="health-fill"></div>
-        </div>
-        <div id="health-value" class="health-value">Health: 100%</div>
-      </div>
-      <div id="status" class="status-panel" aria-live="polite"></div>
-      <canvas id="game" aria-label="Maze game"></canvas>
-    </main>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+            .health-track {
+                width: 100%;
+                height: 18px;
+                overflow: hidden;
+                border: 2px solid #f8efe0;
+                background: #392d2d;
+            }
+
+            .health-fill {
+                width: 100%;
+                height: 100%;
+                background: #d92027;
+            }
+
+            .health-value {
+                margin-top: 6px;
+                color: #e9dcc7;
+                font-size: 16px;
+                text-align: center;
+            }
+
+            .status-panel {
+                min-height: 28px;
+                color: #f8efe0;
+                font-size: 20px;
+                font-weight: 700;
+                text-align: center;
+            }
+
+            .status-panel:empty {
+                visibility: hidden;
+            }
+
+            canvas {
+                display: block;
+                max-width: 100%;
+                height: auto;
+                border: 4px solid #f8efe0;
+                background: #f4ead7;
+            }
+
+            .editor-layout {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 16px;
+                width: min(100%, 820px);
+            }
+
+            .editor-toolbar {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+            }
+
+            .editor-size-controls {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+            }
+
+            .editor-size-label {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                color: #e9dcc7;
+                font-size: 16px;
+            }
+
+            .editor-size-input {
+                width: 72px;
+                border: 2px solid #f8efe0;
+                background: #101722;
+                color: #f8efe0;
+                font: inherit;
+                padding: 8px;
+            }
+
+            .editor-grid {
+                display: grid;
+                gap: 2px;
+                padding: 8px;
+                max-width: 100%;
+                overflow: auto;
+                border: 4px solid #f8efe0;
+                background: #111722;
+            }
+
+            .editor-cell {
+                width: 32px;
+                height: 32px;
+                border: 1px solid #435066;
+                color: #f8efe0;
+                cursor: crosshair;
+                font:
+                    700 16px Georgia,
+                    "Times New Roman",
+                    serif;
+                line-height: 1;
+                padding: 0;
+            }
+
+            .editor-cell-wall {
+                background: #2f3a4a;
+            }
+
+            .editor-cell-floor {
+                background: #f4ead7;
+                color: #2f3a4a;
+            }
+
+            .editor-cell-special {
+                background: #6b604d;
+            }
+
+            .editor-export {
+                width: min(100%, 620px);
+                min-height: 140px;
+                border: 2px solid #f8efe0;
+                background: #101722;
+                color: #f8efe0;
+                font:
+                    16px "Courier New",
+                    monospace;
+                padding: 12px;
+            }
+
+            .editor-validation {
+                min-height: 24px;
+                white-space: pre-line;
+                color: #e9dcc7;
+                font-size: 16px;
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="app">
+            <h1>Maze</h1>
+            <nav class="nav" aria-label="Screens">
+                <button
+                    id="show-game"
+                    class="nav-button nav-button-active"
+                    type="button"
+                >
+                    Game
+                </button>
+                <button id="show-editor" class="nav-button" type="button">
+                    Editor
+                </button>
+            </nav>
+
+            <section id="game-screen" class="screen">
+                <div id="hud" class="hud"></div>
+                <div class="health" aria-label="Player health">
+                    <div
+                        class="health-track"
+                        role="meter"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow="100"
+                    >
+                        <div id="health-fill" class="health-fill"></div>
+                    </div>
+                    <div id="health-value" class="health-value">
+                        Health: 100%
+                    </div>
+                </div>
+                <div id="status" class="status-panel" aria-live="polite"></div>
+                <canvas id="game" aria-label="Maze game"></canvas>
+            </section>
+
+            <section id="editor-screen" class="screen" hidden>
+                <div class="editor-layout">
+                    <div
+                        id="editor-toolbar"
+                        class="editor-toolbar"
+                        aria-label="Tile tools"
+                    ></div>
+                    <div
+                        class="editor-size-controls"
+                        aria-label="Maze size controls"
+                    >
+                        <label class="editor-size-label">
+                            Ширина
+                            <input
+                                id="editor-width"
+                                class="editor-size-input"
+                                type="number"
+                                min="3"
+                                step="1"
+                            />
+                        </label>
+                        <label class="editor-size-label">
+                            Высота
+                            <input
+                                id="editor-height"
+                                class="editor-size-input"
+                                type="number"
+                                min="3"
+                                step="1"
+                            />
+                        </label>
+                        <button
+                            id="editor-add-row"
+                            class="editor-size-button"
+                            type="button"
+                        >
+                            + строка
+                        </button>
+                        <button
+                            id="editor-remove-row"
+                            class="editor-size-button"
+                            type="button"
+                        >
+                            - строка
+                        </button>
+                        <button
+                            id="editor-add-column"
+                            class="editor-size-button"
+                            type="button"
+                        >
+                            + колонка
+                        </button>
+                        <button
+                            id="editor-remove-column"
+                            class="editor-size-button"
+                            type="button"
+                        >
+                            - колонка
+                        </button>
+                    </div>
+                    <div
+                        id="editor-grid"
+                        class="editor-grid"
+                        aria-label="Maze editor grid"
+                    ></div>
+                    <button
+                        id="editor-export-button"
+                        class="editor-export-button"
+                        type="button"
+                    >
+                        Export
+                    </button>
+                    <textarea
+                        id="editor-export"
+                        class="editor-export"
+                        readonly
+                        aria-label="Exported level"
+                    ></textarea>
+                    <div
+                        id="editor-validation"
+                        class="editor-validation"
+                        aria-live="polite"
+                    ></div>
+                </div>
+            </section>
+        </main>
+        <script type="module" src="/src/main.ts"></script>
+    </body>
 </html>

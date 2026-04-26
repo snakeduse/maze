@@ -19,6 +19,10 @@ const movementKeys: Record<string, Direction> = {
 
 export function setupInput(handlers: InputHandlers): void {
   window.addEventListener("keydown", (event) => {
+    if (isEditableTarget(event.target)) {
+      return;
+    }
+
     const key = event.key.toLowerCase();
     const direction = movementKeys[key];
 
@@ -39,4 +43,12 @@ export function setupInput(handlers: InputHandlers): void {
       handlers.onNextLevel();
     }
   });
+}
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return target.isContentEditable || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
 }

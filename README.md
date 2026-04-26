@@ -41,6 +41,17 @@ npm run build
 - Avoid losing all health.
 - Portals `1` and `2` teleport to each other.
 
+## Maze Editor
+
+- Open the editor with the `Editor` button or by visiting `#editor`.
+- Choose a tile type in the toolbar.
+- Change the maze size with the `Width` and `Height` fields.
+- Add or remove one row or column with `+ row`, `- row`, `+ column`, and `- column`.
+- Click a cell to place the selected tile.
+- Hold the mouse button and drag across cells to paint.
+- Press `Export` to generate level text in the same array-of-strings format used by the game.
+- The editor validates one `P`, equal row lengths, portal pairing, and `#` walls on the outer border.
+
 ## Status Messages
 
 - Death: `You died. Press R to restart.`
