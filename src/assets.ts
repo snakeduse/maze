@@ -3,6 +3,7 @@ export type GameAssets = {
   door: HTMLImageElement | null;
   dynamite: HTMLImageElement | null;
   fire: HTMLImageElement | null;
+  fireIdle: HTMLImageElement | null;
   floor: HTMLImageElement | null;
   goal: HTMLImageElement | null;
   key: HTMLImageElement | null;
@@ -20,6 +21,7 @@ const assetPaths: Record<GameAssetKey, string> = {
   door: "/assets/tiny-dungeon/door.png",
   dynamite: "/assets/tiny-dungeon/dynamite.png",
   fire: "/assets/tiny-dungeon/fire.png",
+  fireIdle: "/assets/tiny-dungeon/fire_idle.png",
   floor: "/assets/tiny-dungeon/floor.png",
   goal: "/assets/tiny-dungeon/goal.png",
   key: "/assets/tiny-dungeon/key.png",
@@ -36,6 +38,7 @@ export async function loadAssets(): Promise<GameAssets> {
     door: null,
     dynamite: null,
     fire: null,
+    fireIdle: null,
     floor: null,
     goal: null,
     key: null,

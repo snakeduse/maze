@@ -1,7 +1,14 @@
+import {
+  getAnimationFrame,
+  getHorizontalFrameCount,
+  type SpriteSheetAnimation,
+} from "./animation";
 import type { GameAssetKey, GameAssets } from "./assets";
 import type { GameState, TileType } from "./types";
 
 export const TILE_SIZE = 48;
+
+const SOURCE_TILE_SIZE = 16;
 
 const colors = {
   acid: "#6fbf3d",
@@ -43,12 +50,40 @@ const tileAssetByType: Partial<Record<TileType, GameAssetKey>> = {
   wall: "wall",
 };
 
-export function resizeCanvas(canvas: HTMLCanvasElement, state: GameState): void {
+type TileAnimationConfig = {
+  id: string;
+  assetKey: GameAssetKey;
+  frameWidth: number;
+  frameHeight: number;
+  frameDurationMs: number;
+  loop: boolean;
+};
+
+const tileAnimationByType: Partial<Record<TileType, TileAnimationConfig>> = {
+  fire: {
+    id: "fireIdle",
+    assetKey: "fireIdle",
+    frameWidth: SOURCE_TILE_SIZE,
+    frameHeight: SOURCE_TILE_SIZE,
+    frameDurationMs: 160,
+    loop: true,
+  },
+};
+
+export function resizeCanvas(
+  canvas: HTMLCanvasElement,
+  state: GameState,
+): void {
   canvas.width = state.width * TILE_SIZE;
   canvas.height = state.height * TILE_SIZE;
 }
 
-export function renderGame(canvas: HTMLCanvasElement, state: GameState, assets: GameAssets): void {
+export function renderGame(
+  canvas: HTMLCanvasElement,
+  state: GameState,
+  assets: GameAssets,
+  elapsedMs: number,
+): void {
   const context = canvas.getContext("2d");
 
   if (context === null) {
@@ -60,7 +95,14 @@ export function renderGame(canvas: HTMLCanvasElement, state: GameState, assets: 
 
   for (let y = 0; y < state.height; y += 1) {
     for (let x = 0; x < state.width; x += 1) {
-      drawTile(context, getRenderedTile(state.tiles[y][x], state), x, y, assets);
+      drawTile(
+        context,
+        getRenderedTile(state.tiles[y][x], state),
+        x,
+        y,
+        assets,
+        elapsedMs,
+      );
     }
   }
 
@@ -73,11 +115,12 @@ function drawTile(
   x: number,
   y: number,
   assets: GameAssets,
+  elapsedMs: number,
 ): void {
   const tileX = x * TILE_SIZE;
   const tileY = y * TILE_SIZE;
 
-  if (drawTileWithImage(context, tile, tileX, tileY, assets)) {
+  if (drawTileWithImage(context, tile, tileX, tileY, assets, elapsedMs)) {
     return;
   }
 
@@ -94,7 +137,11 @@ function drawTile(
       drawSpikesTile(context, tileX, tileY);
       break;
     case "fire":
-      drawFireTile(context, tileX, tileY);
+      if (
+        !drawImageOrAnimatedTile(context, tile, tileX, tileY, assets, elapsedMs)
+      ) {
+        drawFireTile(context, tileX, tileY);
+      }
       break;
     case "acid":
       drawAcidTile(context, tileX, tileY);
@@ -129,7 +176,11 @@ function getRenderedTile(tile: TileType, state: GameState): TileType {
   return tile;
 }
 
-function drawPlayer(context: CanvasRenderingContext2D, state: GameState, assets: GameAssets): void {
+function drawPlayer(
+  context: CanvasRenderingContext2D,
+  state: GameState,
+  assets: GameAssets,
+): void {
   const tileX = state.playerPosition.x * TILE_SIZE;
   const tileY = state.playerPosition.y * TILE_SIZE;
 
@@ -156,19 +207,79 @@ function drawTileWithImage(
   tileX: number,
   tileY: number,
   assets: GameAssets,
+  elapsedMs: number,
 ): boolean {
   if (tile === "wall") {
     return drawImageTile(context, getTileImage(assets, tile), tileX, tileY);
   }
 
-  const hasFloor = drawImageTile(context, getTileImage(assets, "floor"), tileX, tileY);
+  const hasFloor = drawImageTile(
+    context,
+    getTileImage(assets, "floor"),
+    tileX,
+    tileY,
+  );
 
   switch (tile) {
     case "floor":
       return hasFloor;
+    case "fire":
+      return (
+        hasFloor &&
+        drawImageOrAnimatedTile(context, tile, tileX, tileY, assets, elapsedMs)
+      );
     default:
-      return hasFloor && drawImageTile(context, getTileImage(assets, tile), tileX, tileY);
+      return (
+        hasFloor &&
+        drawImageTile(context, getTileImage(assets, tile), tileX, tileY)
+      );
   }
+}
+
+function drawImageOrAnimatedTile(
+  context: CanvasRenderingContext2D,
+  tile: TileType,
+  tileX: number,
+  tileY: number,
+  assets: GameAssets,
+  elapsedMs: number,
+): boolean {
+  if (drawAnimatedTile(context, tile, tileX, tileY, assets, elapsedMs)) {
+    return true;
+  }
+
+  return drawImageTile(context, getTileImage(assets, tile), tileX, tileY);
+}
+
+function drawAnimatedTile(
+  context: CanvasRenderingContext2D,
+  tile: TileType,
+  tileX: number,
+  tileY: number,
+  assets: GameAssets,
+  elapsedMs: number,
+): boolean {
+  const animation = getTileAnimation(tile, assets);
+
+  if (animation === null) {
+    return false;
+  }
+
+  const frame = getAnimationFrame(animation, elapsedMs);
+
+  context.drawImage(
+    animation.image,
+    frame.sourceX,
+    frame.sourceY,
+    frame.sourceWidth,
+    frame.sourceHeight,
+    tileX,
+    tileY,
+    TILE_SIZE,
+    TILE_SIZE,
+  );
+
+  return true;
 }
 
 function drawImageTile(
@@ -185,18 +296,38 @@ function drawImageTile(
   return true;
 }
 
-function drawFloorTile(context: CanvasRenderingContext2D, tileX: number, tileY: number): void {
+function drawFloorTile(
+  context: CanvasRenderingContext2D,
+  tileX: number,
+  tileY: number,
+): void {
   context.fillStyle = colors.floor;
   context.fillRect(tileX, tileY, TILE_SIZE, TILE_SIZE);
 
   context.fillStyle = colors.floorAccent;
   context.beginPath();
-  context.arc(tileX + TILE_SIZE * 0.28, tileY + TILE_SIZE * 0.28, TILE_SIZE * 0.05, 0, Math.PI * 2);
-  context.arc(tileX + TILE_SIZE * 0.72, tileY + TILE_SIZE * 0.68, TILE_SIZE * 0.05, 0, Math.PI * 2);
+  context.arc(
+    tileX + TILE_SIZE * 0.28,
+    tileY + TILE_SIZE * 0.28,
+    TILE_SIZE * 0.05,
+    0,
+    Math.PI * 2,
+  );
+  context.arc(
+    tileX + TILE_SIZE * 0.72,
+    tileY + TILE_SIZE * 0.68,
+    TILE_SIZE * 0.05,
+    0,
+    Math.PI * 2,
+  );
   context.fill();
 }
 
-function drawWallTile(context: CanvasRenderingContext2D, tileX: number, tileY: number): void {
+function drawWallTile(
+  context: CanvasRenderingContext2D,
+  tileX: number,
+  tileY: number,
+): void {
   context.fillStyle = colors.wall;
   context.fillRect(tileX, tileY, TILE_SIZE, TILE_SIZE);
   context.fillStyle = colors.wallHighlight;
@@ -204,7 +335,11 @@ function drawWallTile(context: CanvasRenderingContext2D, tileX: number, tileY: n
   context.fillRect(tileX, tileY, 6, TILE_SIZE);
 }
 
-function drawGoalTile(context: CanvasRenderingContext2D, tileX: number, tileY: number): void {
+function drawGoalTile(
+  context: CanvasRenderingContext2D,
+  tileX: number,
+  tileY: number,
+): void {
   const centerX = tileX + TILE_SIZE / 2;
   const centerY = tileY + TILE_SIZE / 2;
 
@@ -221,7 +356,11 @@ function drawGoalTile(context: CanvasRenderingContext2D, tileX: number, tileY: n
   context.stroke();
 }
 
-function drawSpikesTile(context: CanvasRenderingContext2D, tileX: number, tileY: number): void {
+function drawSpikesTile(
+  context: CanvasRenderingContext2D,
+  tileX: number,
+  tileY: number,
+): void {
   context.fillStyle = colors.spikes;
 
   for (let index = 0; index < 4; index += 1) {
@@ -236,40 +375,113 @@ function drawSpikesTile(context: CanvasRenderingContext2D, tileX: number, tileY:
   }
 }
 
-function drawFireTile(context: CanvasRenderingContext2D, tileX: number, tileY: number): void {
+function drawFireTile(
+  context: CanvasRenderingContext2D,
+  tileX: number,
+  tileY: number,
+): void {
   context.fillStyle = colors.fire;
   context.beginPath();
   context.moveTo(tileX + TILE_SIZE * 0.5, tileY + 8);
-  context.quadraticCurveTo(tileX + TILE_SIZE * 0.78, tileY + 18, tileX + TILE_SIZE * 0.67, tileY + 34);
-  context.quadraticCurveTo(tileX + TILE_SIZE * 0.62, tileY + 42, tileX + TILE_SIZE * 0.5, tileY + 42);
-  context.quadraticCurveTo(tileX + TILE_SIZE * 0.26, tileY + 38, tileX + TILE_SIZE * 0.31, tileY + 24);
-  context.quadraticCurveTo(tileX + TILE_SIZE * 0.36, tileY + 15, tileX + TILE_SIZE * 0.5, tileY + 8);
+  context.quadraticCurveTo(
+    tileX + TILE_SIZE * 0.78,
+    tileY + 18,
+    tileX + TILE_SIZE * 0.67,
+    tileY + 34,
+  );
+  context.quadraticCurveTo(
+    tileX + TILE_SIZE * 0.62,
+    tileY + 42,
+    tileX + TILE_SIZE * 0.5,
+    tileY + 42,
+  );
+  context.quadraticCurveTo(
+    tileX + TILE_SIZE * 0.26,
+    tileY + 38,
+    tileX + TILE_SIZE * 0.31,
+    tileY + 24,
+  );
+  context.quadraticCurveTo(
+    tileX + TILE_SIZE * 0.36,
+    tileY + 15,
+    tileX + TILE_SIZE * 0.5,
+    tileY + 8,
+  );
   context.fill();
 
   context.fillStyle = colors.fireInner;
   context.beginPath();
   context.moveTo(tileX + TILE_SIZE * 0.5, tileY + 16);
-  context.quadraticCurveTo(tileX + TILE_SIZE * 0.62, tileY + 24, tileX + TILE_SIZE * 0.56, tileY + 34);
-  context.quadraticCurveTo(tileX + TILE_SIZE * 0.52, tileY + 38, tileX + TILE_SIZE * 0.46, tileY + 34);
-  context.quadraticCurveTo(tileX + TILE_SIZE * 0.4, tileY + 27, tileX + TILE_SIZE * 0.5, tileY + 16);
+  context.quadraticCurveTo(
+    tileX + TILE_SIZE * 0.62,
+    tileY + 24,
+    tileX + TILE_SIZE * 0.56,
+    tileY + 34,
+  );
+  context.quadraticCurveTo(
+    tileX + TILE_SIZE * 0.52,
+    tileY + 38,
+    tileX + TILE_SIZE * 0.46,
+    tileY + 34,
+  );
+  context.quadraticCurveTo(
+    tileX + TILE_SIZE * 0.4,
+    tileY + 27,
+    tileX + TILE_SIZE * 0.5,
+    tileY + 16,
+  );
   context.fill();
 }
 
-function drawAcidTile(context: CanvasRenderingContext2D, tileX: number, tileY: number): void {
+function drawAcidTile(
+  context: CanvasRenderingContext2D,
+  tileX: number,
+  tileY: number,
+): void {
   context.fillStyle = colors.acid;
   context.beginPath();
-  context.ellipse(tileX + TILE_SIZE * 0.5, tileY + TILE_SIZE * 0.62, TILE_SIZE * 0.28, TILE_SIZE * 0.16, 0, 0, Math.PI * 2);
+  context.ellipse(
+    tileX + TILE_SIZE * 0.5,
+    tileY + TILE_SIZE * 0.62,
+    TILE_SIZE * 0.28,
+    TILE_SIZE * 0.16,
+    0,
+    0,
+    Math.PI * 2,
+  );
   context.fill();
 
   context.fillStyle = colors.acidDark;
   context.beginPath();
-  context.arc(tileX + TILE_SIZE * 0.36, tileY + TILE_SIZE * 0.56, 4, 0, Math.PI * 2);
-  context.arc(tileX + TILE_SIZE * 0.58, tileY + TILE_SIZE * 0.66, 3, 0, Math.PI * 2);
-  context.arc(tileX + TILE_SIZE * 0.68, tileY + TILE_SIZE * 0.52, 3, 0, Math.PI * 2);
+  context.arc(
+    tileX + TILE_SIZE * 0.36,
+    tileY + TILE_SIZE * 0.56,
+    4,
+    0,
+    Math.PI * 2,
+  );
+  context.arc(
+    tileX + TILE_SIZE * 0.58,
+    tileY + TILE_SIZE * 0.66,
+    3,
+    0,
+    Math.PI * 2,
+  );
+  context.arc(
+    tileX + TILE_SIZE * 0.68,
+    tileY + TILE_SIZE * 0.52,
+    3,
+    0,
+    Math.PI * 2,
+  );
   context.fill();
 }
 
-function drawDynamiteTile(context: CanvasRenderingContext2D, tileX: number, tileY: number): void {
+function drawDynamiteTile(
+  context: CanvasRenderingContext2D,
+  tileX: number,
+  tileY: number,
+): void {
   context.fillStyle = colors.dynamite;
   context.fillRect(tileX + 14, tileY + 16, 20, 22);
   context.fillStyle = colors.symbol;
@@ -309,7 +521,11 @@ function drawPortalTile(
   drawTileLabel(context, label, tileX, tileY, 20);
 }
 
-function drawKeyTile(context: CanvasRenderingContext2D, tileX: number, tileY: number): void {
+function drawKeyTile(
+  context: CanvasRenderingContext2D,
+  tileX: number,
+  tileY: number,
+): void {
   context.strokeStyle = colors.key;
   context.lineWidth = 4;
   context.beginPath();
@@ -325,7 +541,11 @@ function drawKeyTile(context: CanvasRenderingContext2D, tileX: number, tileY: nu
   context.stroke();
 }
 
-function drawLockedDoorTile(context: CanvasRenderingContext2D, tileX: number, tileY: number): void {
+function drawLockedDoorTile(
+  context: CanvasRenderingContext2D,
+  tileX: number,
+  tileY: number,
+): void {
   context.fillStyle = colors.lockedDoor;
   context.fillRect(tileX + 10, tileY + 10, TILE_SIZE - 20, TILE_SIZE - 10);
   context.fillStyle = colors.lockedDoorInner;
@@ -337,7 +557,11 @@ function drawLockedDoorTile(context: CanvasRenderingContext2D, tileX: number, ti
   context.fillRect(tileX + TILE_SIZE / 2 - 2, tileY + TILE_SIZE / 2, 4, 10);
 }
 
-function drawTileGrid(context: CanvasRenderingContext2D, tileX: number, tileY: number): void {
+function drawTileGrid(
+  context: CanvasRenderingContext2D,
+  tileX: number,
+  tileY: number,
+): void {
   context.strokeStyle = colors.grid;
   context.lineWidth = 1;
   context.strokeRect(tileX + 0.5, tileY + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
@@ -357,8 +581,38 @@ function drawTileLabel(
   context.fillText(label, tileX + TILE_SIZE / 2, tileY + TILE_SIZE / 2);
 }
 
-function getTileImage(assets: GameAssets, tile: TileType): HTMLImageElement | null {
+function getTileImage(
+  assets: GameAssets,
+  tile: TileType,
+): HTMLImageElement | null {
   const assetKey = tileAssetByType[tile];
 
   return assetKey === undefined ? null : assets[assetKey];
+}
+
+function getTileAnimation(
+  tile: TileType,
+  assets: GameAssets,
+): SpriteSheetAnimation | null {
+  const config = tileAnimationByType[tile];
+
+  if (config === undefined) {
+    return null;
+  }
+
+  const image = assets[config.assetKey];
+
+  if (image === null) {
+    return null;
+  }
+
+  return {
+    id: config.id,
+    image,
+    frameWidth: config.frameWidth,
+    frameHeight: config.frameHeight,
+    frameCount: getHorizontalFrameCount(image, config.frameWidth),
+    frameDurationMs: config.frameDurationMs,
+    loop: config.loop,
+  };
 }

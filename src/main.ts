@@ -60,6 +60,7 @@ async function init(): Promise<void> {
 
   resizeCanvas(canvas, gameState);
   render();
+  window.requestAnimationFrame(renderFrame);
 
   setupInput({
     onMove(direction: Direction): void {
@@ -94,13 +95,18 @@ async function init(): Promise<void> {
     },
   });
 
-  function render(): void {
+  function renderFrame(elapsedMs: number): void {
+    render(elapsedMs);
+    window.requestAnimationFrame(renderFrame);
+  }
+
+  function render(elapsedMs = performance.now()): void {
     const status = getGameStatus(gameState, currentLevelIndex, levels.length);
 
     updateHud(hud, gameState, currentLevelIndex, levels.length);
     updateHealthBar(healthTrack, healthFill, healthValue, gameState);
     updateStatusPanel(statusPanel, status);
-    renderGame(canvas, gameState, assets);
+    renderGame(canvas, gameState, assets, elapsedMs);
   }
 }
 

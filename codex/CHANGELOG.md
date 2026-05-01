@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added a small reusable sprite sheet animation helper and animated fire tiles with `fire_idle.png`.
 - Added width and height controls to the maze editor.
 - Added editor buttons for adding and removing rows and columns.
 - Added a separate maze editor screen with tile painting, drag painting, export, and level validation.

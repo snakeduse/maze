@@ -3,7 +3,7 @@
 A small 2D browser maze game built with Vite, TypeScript, and HTML Canvas.
 
 The game has multiple levels. Complete the current level, then press `N` to load the next one.
-Graphics use Kenney Tiny Dungeon assets.
+Graphics use Kenney Tiny Dungeon assets, including a looping fire idle sprite sheet.
 
 ## Install
 
@@ -28,6 +28,7 @@ npm run build
 - Asset pack: Kenney Tiny Dungeon
 - License: Creative Commons CC0
 - Location: `public/assets/tiny-dungeon/`
+- Fire tiles use `fire_idle.png` as a horizontal 16x16 sprite sheet.
 
 ## Controls
 
