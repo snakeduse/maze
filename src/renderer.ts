@@ -4,7 +4,12 @@ import {
   type SpriteSheetAnimation,
 } from "./animation";
 import type { GameAssetKey, GameAssets } from "./assets";
-import type { GameState, Position, TileType } from "./types";
+import type {
+  GameState,
+  HorizontalFacingDirection,
+  Position,
+  TileType,
+} from "./types";
 
 export const TILE_SIZE = 48;
 
@@ -60,6 +65,7 @@ type SpriteAnimationConfig = {
 };
 
 type RenderGameOptions = {
+  playerFacingDirection?: HorizontalFacingDirection;
   playerVisualPosition?: Position;
   isPlayerMoving?: boolean;
 };
@@ -135,6 +141,7 @@ export function renderGame(
     assets,
     elapsedMs,
     options.playerVisualPosition ?? state.playerPosition,
+    options.playerFacingDirection ?? "right",
     options.isPlayerMoving ?? false,
   );
 }
@@ -212,19 +219,29 @@ function drawPlayer(
   assets: GameAssets,
   elapsedMs: number,
   playerRenderPosition: Position = state.playerPosition,
+  playerFacingDirection: HorizontalFacingDirection = "right",
   isPlayerMoving = false,
 ): void {
   const tileX = Math.round(playerRenderPosition.x * TILE_SIZE);
   const tileY = Math.round(playerRenderPosition.y * TILE_SIZE);
+  const isMirrored = playerFacingDirection === "left";
 
   if (
     isPlayerMoving &&
-    drawAnimatedSprite(context, playerWalkAnimationConfig, tileX, tileY, assets, elapsedMs)
+    drawAnimatedSprite(
+      context,
+      playerWalkAnimationConfig,
+      tileX,
+      tileY,
+      assets,
+      elapsedMs,
+      isMirrored,
+    )
   ) {
     return;
   }
 
-  if (drawImageTile(context, assets.player, tileX, tileY)) {
+  if (drawImageTile(context, assets.player, tileX, tileY, isMirrored)) {
     return;
   }
 
@@ -314,12 +331,22 @@ function drawImageTile(
   image: HTMLImageElement | null,
   tileX: number,
   tileY: number,
+  isMirrored = false,
 ): boolean {
   if (image === null) {
     return false;
   }
 
-  context.drawImage(image, tileX, tileY, TILE_SIZE, TILE_SIZE);
+  drawMirroredTile(
+    context,
+    tileX,
+    tileY,
+    isMirrored,
+    (destinationX, destinationY) => {
+      context.drawImage(image, destinationX, destinationY, TILE_SIZE, TILE_SIZE);
+    },
+  );
+
   return true;
 }
 
@@ -330,6 +357,7 @@ function drawAnimatedSprite(
   tileY: number,
   assets: GameAssets,
   elapsedMs: number,
+  isMirrored = false,
 ): boolean {
   const animation = getSpriteAnimation(config, assets);
 
@@ -339,19 +367,46 @@ function drawAnimatedSprite(
 
   const frame = getAnimationFrame(animation, elapsedMs);
 
-  context.drawImage(
-    animation.image,
-    frame.sourceX,
-    frame.sourceY,
-    frame.sourceWidth,
-    frame.sourceHeight,
+  drawMirroredTile(
+    context,
     tileX,
     tileY,
-    TILE_SIZE,
-    TILE_SIZE,
+    isMirrored,
+    (destinationX, destinationY) => {
+      context.drawImage(
+        animation.image,
+        frame.sourceX,
+        frame.sourceY,
+        frame.sourceWidth,
+        frame.sourceHeight,
+        destinationX,
+        destinationY,
+        TILE_SIZE,
+        TILE_SIZE,
+      );
+    },
   );
 
   return true;
+}
+
+function drawMirroredTile(
+  context: CanvasRenderingContext2D,
+  tileX: number,
+  tileY: number,
+  isMirrored: boolean,
+  draw: (destinationX: number, destinationY: number) => void,
+): void {
+  if (!isMirrored) {
+    draw(tileX, tileY);
+    return;
+  }
+
+  context.save();
+  context.translate(tileX + TILE_SIZE, tileY);
+  context.scale(-1, 1);
+  draw(0, 0);
+  context.restore();
 }
 
 function drawFloorTile(

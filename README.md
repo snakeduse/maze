@@ -34,6 +34,7 @@ npm run build
 - Key tiles use `key_idle.png` as a horizontal 16x16 sprite sheet.
 - The player uses `player.png` as a static idle image.
 - The player uses `player_walk_idle.png` as a horizontal 16x16 sprite sheet while a valid move animation is in progress.
+- The player sprite faces the last successful horizontal move, and vertical movement keeps the previous left/right facing direction.
 
 ## Controls
 

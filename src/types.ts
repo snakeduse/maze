@@ -25,6 +25,7 @@ export type TileGrid = readonly (readonly TileType[])[];
 export type LevelData = readonly string[];
 
 export type Direction = "up" | "down" | "left" | "right";
+export type HorizontalFacingDirection = "left" | "right";
 
 export type GameStatus = "playing" | "dead" | "levelComplete" | "gameComplete";
 

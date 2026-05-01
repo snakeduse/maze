@@ -4,7 +4,13 @@ import { createGame, movePlayer, resetGame } from "./game";
 import { setupInput } from "./input";
 import { levels } from "./levels";
 import { renderGame, resizeCanvas } from "./renderer";
-import type { Direction, GameState, GameStatus, Position } from "./types";
+import type {
+  Direction,
+  GameState,
+  GameStatus,
+  HorizontalFacingDirection,
+  Position,
+} from "./types";
 
 const canvas = getRequiredElement<HTMLCanvasElement>("#game");
 const gameScreen = getRequiredElement<HTMLElement>("#game-screen");
@@ -43,6 +49,7 @@ let currentLevelIndex = 0;
 let gameState = createGame(getCurrentLevel());
 let activeScreen: AppScreen = getScreenFromHash();
 let playerMovementAnimation: PlayerMovementAnimation | null = null;
+let playerFacingDirection: HorizontalFacingDirection = "right";
 let heldMoveDirection: Direction | null = null;
 let heldMoveResumeAtMs = 0;
 
@@ -98,6 +105,7 @@ async function init(): Promise<void> {
       resetMovementState();
       currentLevelIndex += 1;
       gameState = createGame(getCurrentLevel());
+      playerFacingDirection = "right";
       resizeCanvas(canvas, gameState);
       render();
     },
@@ -108,6 +116,7 @@ async function init(): Promise<void> {
 
       resetMovementState();
       gameState = resetGame(gameState);
+      playerFacingDirection = "right";
       render();
     },
   });
@@ -128,6 +137,7 @@ async function init(): Promise<void> {
     renderGame(canvas, gameState, assets, elapsedMs, {
       playerVisualPosition: playerRenderPosition,
       isPlayerMoving: playerMovementAnimation !== null,
+      playerFacingDirection,
     });
   }
 }
@@ -274,6 +284,8 @@ function tryStartMove(direction: Direction, startedAtMs: number): boolean {
     return false;
   }
 
+  playerFacingDirection = getFacingDirectionAfterMove(playerFacingDirection, direction);
+
   const nextPlayerPosition = gameState.playerPosition;
 
   if (!areAdjacentPositions(previousPlayerPosition, nextPlayerPosition)) {
@@ -328,6 +340,17 @@ function resetMovementState(): void {
 
 function areAdjacentPositions(left: Position, right: Position): boolean {
   return Math.abs(left.x - right.x) + Math.abs(left.y - right.y) === 1;
+}
+
+function getFacingDirectionAfterMove(
+  currentDirection: HorizontalFacingDirection,
+  moveDirection: Direction,
+): HorizontalFacingDirection {
+  if (moveDirection === "left" || moveDirection === "right") {
+    return moveDirection;
+  }
+
+  return currentDirection;
 }
 
 function isGameActive(state: GameState): boolean {
