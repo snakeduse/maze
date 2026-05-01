@@ -9,7 +9,6 @@ export type GameAssets = {
   key: HTMLImageElement | null;
   keyIdle: HTMLImageElement | null;
   player: HTMLImageElement | null;
-  playerIdle: HTMLImageElement | null;
   playerWalkIdle: HTMLImageElement | null;
   portal1: HTMLImageElement | null;
   portal2: HTMLImageElement | null;
@@ -30,7 +29,6 @@ const assetPaths: Record<GameAssetKey, string> = {
   key: "/assets/tiny-dungeon/key.png",
   keyIdle: "/assets/tiny-dungeon/key_idle.png",
   player: "/assets/tiny-dungeon/player.png",
-  playerIdle: "/assets/tiny-dungeon/player_idle.png",
   playerWalkIdle: "/assets/tiny-dungeon/player_walk_idle.png",
   portal1: "/assets/tiny-dungeon/portal1.png",
   portal2: "/assets/tiny-dungeon/portal2.png",
@@ -50,7 +48,6 @@ export async function loadAssets(): Promise<GameAssets> {
     key: null,
     keyIdle: null,
     player: null,
-    playerIdle: null,
     playerWalkIdle: null,
     portal1: null,
     portal2: null,

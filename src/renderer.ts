@@ -78,15 +78,6 @@ const tileAnimationByType: Partial<Record<TileType, SpriteAnimationConfig>> = {
   },
 };
 
-const playerIdleAnimationConfig: SpriteAnimationConfig = {
-  id: "playerIdle",
-  assetKey: "playerIdle",
-  frameWidth: SOURCE_TILE_SIZE,
-  frameHeight: SOURCE_TILE_SIZE,
-  frameDurationMs: 160,
-  loop: true,
-};
-
 const playerWalkAnimationConfig: SpriteAnimationConfig = {
   id: "playerWalkIdle",
   assetKey: "playerWalkIdle",
@@ -221,17 +212,10 @@ function drawPlayer(
 ): void {
   const tileX = Math.round(playerRenderPosition.x * TILE_SIZE);
   const tileY = Math.round(playerRenderPosition.y * TILE_SIZE);
-  const animationConfig = isPlayerMoving
-    ? playerWalkAnimationConfig
-    : playerIdleAnimationConfig;
-
-  if (drawAnimatedSprite(context, animationConfig, tileX, tileY, assets, elapsedMs)) {
-    return;
-  }
 
   if (
     isPlayerMoving &&
-    drawAnimatedSprite(context, playerIdleAnimationConfig, tileX, tileY, assets, elapsedMs)
+    drawAnimatedSprite(context, playerWalkAnimationConfig, tileX, tileY, assets, elapsedMs)
   ) {
     return;
   }
