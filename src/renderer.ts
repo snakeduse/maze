@@ -59,6 +59,11 @@ type SpriteAnimationConfig = {
   loop: boolean;
 };
 
+type RenderGameOptions = {
+  playerVisualPosition?: Position;
+  isPlayerMoving?: boolean;
+};
+
 const tileAnimationByType: Partial<Record<TileType, SpriteAnimationConfig>> = {
   fire: {
     id: "fireIdle",
@@ -100,8 +105,7 @@ export function renderGame(
   state: GameState,
   assets: GameAssets,
   elapsedMs: number,
-  playerRenderPosition: Position = state.playerPosition,
-  isPlayerMoving = false,
+  options: RenderGameOptions = {},
 ): void {
   const context = canvas.getContext("2d");
 
@@ -130,8 +134,8 @@ export function renderGame(
     state,
     assets,
     elapsedMs,
-    playerRenderPosition,
-    isPlayerMoving,
+    options.playerVisualPosition ?? state.playerPosition,
+    options.isPlayerMoving ?? false,
   );
 }
 

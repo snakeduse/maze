@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Added smoother render-only player movement between adjacent tiles, including held-key movement.
+- Refined render-only player movement between adjacent tiles, including held-key continuation without browser key repeat.
 - Added a small reusable sprite sheet animation helper and animated fire tiles with `fire_idle.png`.
 - Added width and height controls to the maze editor.
 - Added editor buttons for adding and removing rows and columns.
