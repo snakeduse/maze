@@ -201,8 +201,8 @@ function drawPlayer(
   elapsedMs: number,
   playerRenderPosition: Position = state.playerPosition,
 ): void {
-  const tileX = playerRenderPosition.x * TILE_SIZE;
-  const tileY = playerRenderPosition.y * TILE_SIZE;
+  const tileX = Math.round(playerRenderPosition.x * TILE_SIZE);
+  const tileY = Math.round(playerRenderPosition.y * TILE_SIZE);
 
   if (drawAnimatedSprite(context, playerIdleAnimationConfig, tileX, tileY, assets, elapsedMs)) {
     return;

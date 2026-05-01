@@ -37,12 +37,22 @@ type PlayerMovementAnimation = {
   durationMs: number;
 };
 
-const playerMovementDurationMs = 140;
+type PlayerMoveAttemptResult = "animated" | "snapped" | "blocked" | "animating";
+
+type BlockedHeldMove = {
+  direction: Direction;
+  playerPosition: Position;
+};
+
+const playerMovementDurationMs = 220;
 
 let currentLevelIndex = 0;
 let gameState = createGame(getCurrentLevel());
 let activeScreen: AppScreen = getScreenFromHash();
 let playerMovementAnimation: PlayerMovementAnimation | null = null;
+let heldMoveDirection: Direction | null = null;
+let blockedHeldMove: BlockedHeldMove | null = null;
+let nextHeldMoveAtMs = 0;
 
 void init();
 
@@ -79,15 +89,13 @@ async function init(): Promise<void> {
       }
 
       const now = performance.now();
-
-      if (getActivePlayerMovementAnimation(now) !== null) {
-        return;
-      }
-
-      const previousPlayerPosition = { ...gameState.playerPosition };
-      gameState = movePlayer(gameState, direction);
-      startPlayerMovementAnimation(previousPlayerPosition, gameState.playerPosition, now);
+      const result = tryMovePlayer(direction, now);
+      updateHeldMoveAfterAttempt(direction, result, now);
       render();
+    },
+    onHeldMoveChange(direction: Direction | null): void {
+      heldMoveDirection = direction;
+      clearHeldMoveAttemptState();
     },
     onNextLevel(): void {
       if (activeScreen !== "game") {
@@ -99,6 +107,7 @@ async function init(): Promise<void> {
       }
 
       clearPlayerMovementAnimation();
+      clearHeldMoveAttemptState();
       currentLevelIndex += 1;
       gameState = createGame(getCurrentLevel());
       resizeCanvas(canvas, gameState);
@@ -110,12 +119,14 @@ async function init(): Promise<void> {
       }
 
       clearPlayerMovementAnimation();
+      clearHeldMoveAttemptState();
       gameState = resetGame(gameState);
       render();
     },
   });
 
   function renderFrame(elapsedMs: number): void {
+    continueHeldMovement(elapsedMs);
     render(elapsedMs);
     window.requestAnimationFrame(renderFrame);
   }
@@ -229,6 +240,61 @@ function isLastLevel(levelIndex: number, levelCount: number): boolean {
   return levelIndex === levelCount - 1;
 }
 
+function continueHeldMovement(elapsedMs: number): void {
+  if (
+    activeScreen !== "game" ||
+    heldMoveDirection === null ||
+    elapsedMs < nextHeldMoveAtMs ||
+    isBlockedHeldMove(heldMoveDirection) ||
+    getActivePlayerMovementAnimation(elapsedMs) !== null
+  ) {
+    return;
+  }
+
+  const result = tryMovePlayer(heldMoveDirection, elapsedMs);
+  updateHeldMoveAfterAttempt(heldMoveDirection, result, elapsedMs);
+}
+
+function tryMovePlayer(direction: Direction, elapsedMs: number): PlayerMoveAttemptResult {
+  if (getActivePlayerMovementAnimation(elapsedMs) !== null) {
+    return "animating";
+  }
+
+  const previousPlayerPosition = { ...gameState.playerPosition };
+  gameState = movePlayer(gameState, direction);
+  return startPlayerMovementAnimation(previousPlayerPosition, gameState.playerPosition, elapsedMs);
+}
+
+function updateHeldMoveAfterAttempt(
+  direction: Direction,
+  result: PlayerMoveAttemptResult,
+  elapsedMs: number,
+): void {
+  if (result === "blocked") {
+    blockedHeldMove = {
+      direction,
+      playerPosition: { ...gameState.playerPosition },
+    };
+    return;
+  }
+
+  if (result === "snapped") {
+    nextHeldMoveAtMs = elapsedMs + playerMovementDurationMs;
+  }
+
+  if (result !== "animating") {
+    blockedHeldMove = null;
+  }
+}
+
+function isBlockedHeldMove(direction: Direction): boolean {
+  return (
+    blockedHeldMove !== null &&
+    blockedHeldMove.direction === direction &&
+    !positionsDiffer(blockedHeldMove.playerPosition, gameState.playerPosition)
+  );
+}
+
 function getPlayerRenderPosition(elapsedMs: number): Position {
   const animation = getActivePlayerMovementAnimation(elapsedMs);
 
@@ -236,7 +302,7 @@ function getPlayerRenderPosition(elapsedMs: number): Position {
     return gameState.playerPosition;
   }
 
-  const progress = smoothstep(
+  const progress = easeInOutSine(
     clamp(
       (elapsedMs - animation.startedAtMs) / animation.durationMs,
       0,
@@ -273,10 +339,15 @@ function startPlayerMovementAnimation(
   from: Position,
   to: Position,
   startedAtMs: number,
-): void {
-  if (!positionsDiffer(from, to) || !areAdjacentPositions(from, to)) {
+): PlayerMoveAttemptResult {
+  if (!positionsDiffer(from, to)) {
     playerMovementAnimation = null;
-    return;
+    return "blocked";
+  }
+
+  if (!areAdjacentPositions(from, to)) {
+    playerMovementAnimation = null;
+    return "snapped";
   }
 
   playerMovementAnimation = {
@@ -285,10 +356,17 @@ function startPlayerMovementAnimation(
     startedAtMs,
     durationMs: playerMovementDurationMs,
   };
+
+  return "animated";
 }
 
 function clearPlayerMovementAnimation(): void {
   playerMovementAnimation = null;
+}
+
+function clearHeldMoveAttemptState(): void {
+  blockedHeldMove = null;
+  nextHeldMoveAtMs = 0;
 }
 
 function positionsDiffer(left: Position, right: Position): boolean {
@@ -303,8 +381,8 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-function smoothstep(value: number): number {
-  return value * value * (3 - 2 * value);
+function easeInOutSine(value: number): number {
+  return 0.5 - Math.cos(value * Math.PI) / 2;
 }
 
 function getRequiredElement<T extends Element>(selector: string): T {
