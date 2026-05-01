@@ -4,7 +4,7 @@ import {
   type SpriteSheetAnimation,
 } from "./animation";
 import type { GameAssetKey, GameAssets } from "./assets";
-import type { GameState, TileType } from "./types";
+import type { GameState, Position, TileType } from "./types";
 
 export const TILE_SIZE = 48;
 
@@ -100,6 +100,7 @@ export function renderGame(
   state: GameState,
   assets: GameAssets,
   elapsedMs: number,
+  playerRenderPosition: Position = state.playerPosition,
 ): void {
   const context = canvas.getContext("2d");
 
@@ -123,7 +124,7 @@ export function renderGame(
     }
   }
 
-  drawPlayer(context, state, assets, elapsedMs);
+  drawPlayer(context, state, assets, elapsedMs, playerRenderPosition);
 }
 
 function drawTile(
@@ -198,9 +199,10 @@ function drawPlayer(
   state: GameState,
   assets: GameAssets,
   elapsedMs: number,
+  playerRenderPosition: Position = state.playerPosition,
 ): void {
-  const tileX = state.playerPosition.x * TILE_SIZE;
-  const tileY = state.playerPosition.y * TILE_SIZE;
+  const tileX = playerRenderPosition.x * TILE_SIZE;
+  const tileY = playerRenderPosition.y * TILE_SIZE;
 
   if (drawAnimatedSprite(context, playerIdleAnimationConfig, tileX, tileY, assets, elapsedMs)) {
     return;
