@@ -50,7 +50,7 @@ const tileAssetByType: Partial<Record<TileType, GameAssetKey>> = {
   wall: "wall",
 };
 
-type TileAnimationConfig = {
+type SpriteAnimationConfig = {
   id: string;
   assetKey: GameAssetKey;
   frameWidth: number;
@@ -59,7 +59,7 @@ type TileAnimationConfig = {
   loop: boolean;
 };
 
-const tileAnimationByType: Partial<Record<TileType, TileAnimationConfig>> = {
+const tileAnimationByType: Partial<Record<TileType, SpriteAnimationConfig>> = {
   fire: {
     id: "fireIdle",
     assetKey: "fireIdle",
@@ -68,6 +68,23 @@ const tileAnimationByType: Partial<Record<TileType, TileAnimationConfig>> = {
     frameDurationMs: 160,
     loop: true,
   },
+  key: {
+    id: "keyIdle",
+    assetKey: "keyIdle",
+    frameWidth: SOURCE_TILE_SIZE,
+    frameHeight: SOURCE_TILE_SIZE,
+    frameDurationMs: 160,
+    loop: true,
+  },
+};
+
+const playerIdleAnimationConfig: SpriteAnimationConfig = {
+  id: "playerIdle",
+  assetKey: "playerIdle",
+  frameWidth: SOURCE_TILE_SIZE,
+  frameHeight: SOURCE_TILE_SIZE,
+  frameDurationMs: 160,
+  loop: true,
 };
 
 export function resizeCanvas(
@@ -106,7 +123,7 @@ export function renderGame(
     }
   }
 
-  drawPlayer(context, state, assets);
+  drawPlayer(context, state, assets, elapsedMs);
 }
 
 function drawTile(
@@ -180,9 +197,14 @@ function drawPlayer(
   context: CanvasRenderingContext2D,
   state: GameState,
   assets: GameAssets,
+  elapsedMs: number,
 ): void {
   const tileX = state.playerPosition.x * TILE_SIZE;
   const tileY = state.playerPosition.y * TILE_SIZE;
+
+  if (drawAnimatedSprite(context, playerIdleAnimationConfig, tileX, tileY, assets, elapsedMs)) {
+    return;
+  }
 
   if (drawImageTile(context, assets.player, tileX, tileY)) {
     return;
@@ -224,6 +246,7 @@ function drawTileWithImage(
     case "floor":
       return hasFloor;
     case "fire":
+    case "key":
       return (
         hasFloor &&
         drawImageOrAnimatedTile(context, tile, tileX, tileY, assets, elapsedMs)
@@ -259,7 +282,38 @@ function drawAnimatedTile(
   assets: GameAssets,
   elapsedMs: number,
 ): boolean {
-  const animation = getTileAnimation(tile, assets);
+  const config = tileAnimationByType[tile];
+
+  if (config === undefined) {
+    return false;
+  }
+
+  return drawAnimatedSprite(context, config, tileX, tileY, assets, elapsedMs);
+}
+
+function drawImageTile(
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement | null,
+  tileX: number,
+  tileY: number,
+): boolean {
+  if (image === null) {
+    return false;
+  }
+
+  context.drawImage(image, tileX, tileY, TILE_SIZE, TILE_SIZE);
+  return true;
+}
+
+function drawAnimatedSprite(
+  context: CanvasRenderingContext2D,
+  config: SpriteAnimationConfig,
+  tileX: number,
+  tileY: number,
+  assets: GameAssets,
+  elapsedMs: number,
+): boolean {
+  const animation = getSpriteAnimation(config, assets);
 
   if (animation === null) {
     return false;
@@ -279,20 +333,6 @@ function drawAnimatedTile(
     TILE_SIZE,
   );
 
-  return true;
-}
-
-function drawImageTile(
-  context: CanvasRenderingContext2D,
-  image: HTMLImageElement | null,
-  tileX: number,
-  tileY: number,
-): boolean {
-  if (image === null) {
-    return false;
-  }
-
-  context.drawImage(image, tileX, tileY, TILE_SIZE, TILE_SIZE);
   return true;
 }
 
@@ -590,16 +630,10 @@ function getTileImage(
   return assetKey === undefined ? null : assets[assetKey];
 }
 
-function getTileAnimation(
-  tile: TileType,
+function getSpriteAnimation(
+  config: SpriteAnimationConfig,
   assets: GameAssets,
 ): SpriteSheetAnimation | null {
-  const config = tileAnimationByType[tile];
-
-  if (config === undefined) {
-    return null;
-  }
-
   const image = assets[config.assetKey];
 
   if (image === null) {
