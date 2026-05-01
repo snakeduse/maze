@@ -133,12 +133,20 @@ async function init(): Promise<void> {
 
   function render(elapsedMs = performance.now()): void {
     const status = getGameStatus(gameState, currentLevelIndex, levels.length);
-    const playerRenderPosition = getPlayerRenderPosition(elapsedMs);
+    const playerMovement = getActivePlayerMovementAnimation(elapsedMs);
+    const playerRenderPosition = getPlayerRenderPosition(elapsedMs, playerMovement);
 
     updateHud(hud, gameState, currentLevelIndex, levels.length);
     updateHealthBar(healthTrack, healthFill, healthValue, gameState);
     updateStatusPanel(statusPanel, status);
-    renderGame(canvas, gameState, assets, elapsedMs, playerRenderPosition);
+    renderGame(
+      canvas,
+      gameState,
+      assets,
+      elapsedMs,
+      playerRenderPosition,
+      playerMovement !== null,
+    );
   }
 }
 
@@ -295,9 +303,10 @@ function isBlockedHeldMove(direction: Direction): boolean {
   );
 }
 
-function getPlayerRenderPosition(elapsedMs: number): Position {
-  const animation = getActivePlayerMovementAnimation(elapsedMs);
-
+function getPlayerRenderPosition(
+  elapsedMs: number,
+  animation: PlayerMovementAnimation | null = getActivePlayerMovementAnimation(elapsedMs),
+): Position {
   if (animation === null) {
     return gameState.playerPosition;
   }

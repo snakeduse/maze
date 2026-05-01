@@ -87,6 +87,15 @@ const playerIdleAnimationConfig: SpriteAnimationConfig = {
   loop: true,
 };
 
+const playerWalkAnimationConfig: SpriteAnimationConfig = {
+  id: "playerWalkIdle",
+  assetKey: "playerWalkIdle",
+  frameWidth: SOURCE_TILE_SIZE,
+  frameHeight: SOURCE_TILE_SIZE,
+  frameDurationMs: 110,
+  loop: true,
+};
+
 export function resizeCanvas(
   canvas: HTMLCanvasElement,
   state: GameState,
@@ -101,6 +110,7 @@ export function renderGame(
   assets: GameAssets,
   elapsedMs: number,
   playerRenderPosition: Position = state.playerPosition,
+  isPlayerMoving = false,
 ): void {
   const context = canvas.getContext("2d");
 
@@ -124,7 +134,14 @@ export function renderGame(
     }
   }
 
-  drawPlayer(context, state, assets, elapsedMs, playerRenderPosition);
+  drawPlayer(
+    context,
+    state,
+    assets,
+    elapsedMs,
+    playerRenderPosition,
+    isPlayerMoving,
+  );
 }
 
 function drawTile(
@@ -200,11 +217,22 @@ function drawPlayer(
   assets: GameAssets,
   elapsedMs: number,
   playerRenderPosition: Position = state.playerPosition,
+  isPlayerMoving = false,
 ): void {
   const tileX = Math.round(playerRenderPosition.x * TILE_SIZE);
   const tileY = Math.round(playerRenderPosition.y * TILE_SIZE);
+  const animationConfig = isPlayerMoving
+    ? playerWalkAnimationConfig
+    : playerIdleAnimationConfig;
 
-  if (drawAnimatedSprite(context, playerIdleAnimationConfig, tileX, tileY, assets, elapsedMs)) {
+  if (drawAnimatedSprite(context, animationConfig, tileX, tileY, assets, elapsedMs)) {
+    return;
+  }
+
+  if (
+    isPlayerMoving &&
+    drawAnimatedSprite(context, playerIdleAnimationConfig, tileX, tileY, assets, elapsedMs)
+  ) {
     return;
   }
 
