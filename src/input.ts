@@ -3,6 +3,7 @@ import type { Direction } from "./types";
 type InputHandlers = {
   onMove: (direction: Direction) => void;
   onHeldMoveChange: (direction: Direction | null) => void;
+  onShiftChange: (isHeld: boolean) => void;
   onNextLevel: () => void;
   onRestart: () => void;
 };
@@ -27,6 +28,13 @@ export function setupInput(handlers: InputHandlers): void {
     }
 
     const key = event.key.toLowerCase();
+
+    if (key === "shift") {
+      event.preventDefault();
+      handlers.onShiftChange(true);
+      return;
+    }
+
     const direction = movementKeys[key];
 
     if (direction !== undefined) {
@@ -56,6 +64,13 @@ export function setupInput(handlers: InputHandlers): void {
 
   window.addEventListener("keyup", (event) => {
     const key = event.key.toLowerCase();
+
+    if (key === "shift") {
+      event.preventDefault();
+      handlers.onShiftChange(false);
+      return;
+    }
+
     const direction = movementKeys[key];
 
     if (direction === undefined) {
@@ -74,12 +89,12 @@ export function setupInput(handlers: InputHandlers): void {
   });
 
   window.addEventListener("blur", () => {
-    if (heldMovementKeys.length === 0) {
-      return;
+    if (heldMovementKeys.length > 0) {
+      heldMovementKeys.length = 0;
+      handlers.onHeldMoveChange(null);
     }
 
-    heldMovementKeys.length = 0;
-    handlers.onHeldMoveChange(null);
+    handlers.onShiftChange(false);
   });
 }
 

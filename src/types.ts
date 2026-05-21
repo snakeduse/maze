@@ -39,6 +39,7 @@ export type GameState = {
   portalTwoPosition: Position | null;
   moveCount: number;
   healthPercent: number;
+  boostAmount: number;
   hasKey: boolean;
   isComplete: boolean;
   isDead: boolean;

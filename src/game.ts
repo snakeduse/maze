@@ -25,6 +25,7 @@ const directionOffsets: Record<Direction, Position> = {
 };
 
 const initialHealthPercent = 100;
+export const maxBoostAmount = 100;
 
 const damageByDeadlyTile: Partial<Record<TileType, number>> = {
   acid: 50,
@@ -193,6 +194,7 @@ export function createGame(level: LevelData): GameState {
     portalTwoPosition: copyPosition(parsedLevel.portalTwoPosition),
     moveCount: 0,
     healthPercent: initialHealthPercent,
+    boostAmount: maxBoostAmount,
     hasKey: false,
     isComplete: false,
     isDead: false,
@@ -205,9 +207,27 @@ export function resetGame(state: GameState): GameState {
     playerPosition: { ...state.playerStartPosition },
     moveCount: 0,
     healthPercent: initialHealthPercent,
+    boostAmount: maxBoostAmount,
     hasKey: false,
     isComplete: false,
     isDead: false,
+  };
+}
+
+export function consumePlayerBoost(state: GameState, amount: number): GameState {
+  if (amount <= 0) {
+    return state;
+  }
+
+  const boostAmount = clamp(state.boostAmount - amount, 0, maxBoostAmount);
+
+  if (boostAmount === state.boostAmount) {
+    return state;
+  }
+
+  return {
+    ...state,
+    boostAmount,
   };
 }
 
@@ -343,4 +363,8 @@ function validatePortalPair(
 
 function copyPosition(position: Position | null): Position | null {
   return position === null ? null : { ...position };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
 }

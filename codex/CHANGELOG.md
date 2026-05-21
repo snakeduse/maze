@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added a Shift-based 2x speed boost with a blue UI bar that drains only during boosted movement.
 - Refined render-only player movement between adjacent tiles, including held-key continuation without browser key repeat.
 - Added a small reusable sprite sheet animation helper and animated fire tiles with `fire_idle.png`.
 - Added width and height controls to the maze editor.

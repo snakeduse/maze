@@ -1,6 +1,6 @@
 import { loadAssets } from "./assets";
 import { setupMazeEditor } from "./editor";
-import { createGame, movePlayer, resetGame } from "./game";
+import { consumePlayerBoost, createGame, maxBoostAmount, movePlayer, resetGame } from "./game";
 import { setupInput } from "./input";
 import { levels } from "./levels";
 import { renderGame, resizeCanvas } from "./renderer";
@@ -21,6 +21,9 @@ const hud = getRequiredElement<HTMLDivElement>("#hud");
 const healthTrack = getRequiredElement<HTMLDivElement>(".health-track");
 const healthFill = getRequiredElement<HTMLDivElement>("#health-fill");
 const healthValue = getRequiredElement<HTMLDivElement>("#health-value");
+const boostTrack = getRequiredElement<HTMLDivElement>(".boost-track");
+const boostFill = getRequiredElement<HTMLDivElement>("#boost-fill");
+const boostValue = getRequiredElement<HTMLDivElement>("#boost-value");
 const statusPanel = getRequiredElement<HTMLDivElement>("#status");
 const editorWidthInput = getRequiredElement<HTMLInputElement>("#editor-width");
 const editorHeightInput = getRequiredElement<HTMLInputElement>("#editor-height");
@@ -44,6 +47,8 @@ type PlayerMovementAnimation = {
 };
 
 const playerMovementDurationMs = 160;
+const boostSpeedMultiplier = 2;
+const boostDrainPerSecond = 40;
 
 let currentLevelIndex = 0;
 let gameState = createGame(getCurrentLevel());
@@ -52,6 +57,7 @@ let playerMovementAnimation: PlayerMovementAnimation | null = null;
 let playerFacingDirection: HorizontalFacingDirection = "right";
 let heldMoveDirection: Direction | null = null;
 let heldMoveResumeAtMs = 0;
+let isShiftHeld = false;
 
 void init();
 
@@ -93,6 +99,9 @@ async function init(): Promise<void> {
     onHeldMoveChange(direction: Direction | null): void {
       heldMoveDirection = direction;
     },
+    onShiftChange(isHeld: boolean): void {
+      isShiftHeld = isHeld;
+    },
     onNextLevel(): void {
       if (activeScreen !== "game") {
         return;
@@ -133,6 +142,7 @@ async function init(): Promise<void> {
 
     updateHud(hud, gameState, currentLevelIndex, levels.length);
     updateHealthBar(healthTrack, healthFill, healthValue, gameState);
+    updateBoostBar(boostTrack, boostFill, boostValue, gameState);
     updateStatusPanel(statusPanel, status);
     renderGame(canvas, gameState, assets, elapsedMs, {
       playerVisualPosition: playerRenderPosition,
@@ -174,7 +184,7 @@ function updateHud(
 ): void {
   const keyText = state.hasKey ? "yes" : "no";
   const levelText = `Level: ${levelIndex + 1}/${levelCount}`;
-  const controlsText = "Move: WASD or Arrow keys | Restart: R | Next: N after complete";
+  const controlsText = "Move: WASD or Arrow keys | Boost: Hold Shift | Restart: R | Next: N after complete";
 
   element.textContent = `${levelText} | Moves: ${state.moveCount} | Key: ${keyText} | ${controlsText}`;
 }
@@ -190,6 +200,19 @@ function updateHealthBar(
   trackElement.setAttribute("aria-valuenow", String(state.healthPercent));
   fillElement.style.width = healthText;
   valueElement.textContent = `Health: ${healthText}`;
+}
+
+function updateBoostBar(
+  trackElement: HTMLDivElement,
+  fillElement: HTMLDivElement,
+  valueElement: HTMLDivElement,
+  state: GameState,
+): void {
+  const boostPercent = clamp((state.boostAmount / maxBoostAmount) * 100, 0, 100);
+
+  trackElement.setAttribute("aria-valuenow", String(boostPercent));
+  fillElement.style.width = `${boostPercent}%`;
+  valueElement.textContent = `Boost: ${Math.round(boostPercent)}%`;
 }
 
 function updateStatusPanel(element: HTMLDivElement, status: GameStatus): void {
@@ -275,6 +298,8 @@ function tryStartMove(direction: Direction, startedAtMs: number): boolean {
     return false;
   }
 
+  const isBoostedMove = isShiftHeld && gameState.boostAmount > 0;
+  const moveDurationMs = getMoveDurationMs(isBoostedMove);
   const previousPlayerPosition = { ...gameState.playerPosition };
   const previousMoveCount = gameState.moveCount;
 
@@ -284,12 +309,16 @@ function tryStartMove(direction: Direction, startedAtMs: number): boolean {
     return false;
   }
 
+  if (isBoostedMove) {
+    gameState = consumePlayerBoost(gameState, getBoostDrainAmount(moveDurationMs));
+  }
+
   playerFacingDirection = getFacingDirectionAfterMove(playerFacingDirection, direction);
 
   const nextPlayerPosition = gameState.playerPosition;
 
   if (!areAdjacentPositions(previousPlayerPosition, nextPlayerPosition)) {
-    heldMoveResumeAtMs = startedAtMs + playerMovementDurationMs;
+    heldMoveResumeAtMs = startedAtMs + moveDurationMs;
     return true;
   }
 
@@ -297,11 +326,23 @@ function tryStartMove(direction: Direction, startedAtMs: number): boolean {
     from: previousPlayerPosition,
     to: { ...nextPlayerPosition },
     startedAtMs,
-    durationMs: playerMovementDurationMs,
+    durationMs: moveDurationMs,
   };
   heldMoveResumeAtMs = 0;
 
   return true;
+}
+
+function getMoveDurationMs(isBoostedMove: boolean): number {
+  if (!isBoostedMove) {
+    return playerMovementDurationMs;
+  }
+
+  return playerMovementDurationMs / boostSpeedMultiplier;
+}
+
+function getBoostDrainAmount(durationMs: number): number {
+  return boostDrainPerSecond * (durationMs / 1000);
 }
 
 function getPlayerVisualPosition(elapsedMs: number): Position {

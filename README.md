@@ -39,11 +39,14 @@ npm run build
 ## Controls
 
 - Move: WASD or Arrow keys
+- Hold `Shift` while moving to move at 2x speed until boost is empty
 - Restart current level: R
 - Next level after completion: N
 - Reach the goal to complete the level.
 - Collect the key to unlock the locked door.
 - The player starts each level with 100% health.
+- The player also starts each level with 100% boost energy shown by a blue bar.
+- Boost drains only during boosted movement and does not regenerate during the level.
 - Spikes deal 10% damage, fire deals 70%, acid deals 50%, and dynamite deals 90%.
 - Avoid losing all health.
 - Portals `1` and `2` teleport to each other.

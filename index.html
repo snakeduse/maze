@@ -72,15 +72,20 @@
                 font-size: 18px;
             }
 
-            .health {
+            .health,
+            .boost {
                 width: min(100%, 360px);
             }
 
-            .health-track {
+            .health-track,
+            .boost-track {
                 width: 100%;
                 height: 18px;
                 overflow: hidden;
                 border: 2px solid #f8efe0;
+            }
+
+            .health-track {
                 background: #392d2d;
             }
 
@@ -90,11 +95,22 @@
                 background: #d92027;
             }
 
-            .health-value {
+            .health-value,
+            .boost-value {
                 margin-top: 6px;
                 color: #e9dcc7;
                 font-size: 16px;
                 text-align: center;
+            }
+
+            .boost-track {
+                background: #1f2f49;
+            }
+
+            .boost-fill {
+                width: 100%;
+                height: 100%;
+                background: #2a8cf0;
             }
 
             .status-panel {
@@ -244,6 +260,20 @@
                     </div>
                     <div id="health-value" class="health-value">
                         Health: 100%
+                    </div>
+                </div>
+                <div class="boost" aria-label="Player boost energy">
+                    <div
+                        class="boost-track"
+                        role="meter"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow="100"
+                    >
+                        <div id="boost-fill" class="boost-fill"></div>
+                    </div>
+                    <div id="boost-value" class="boost-value">
+                        Boost: 100%
                     </div>
                 </div>
                 <div id="status" class="status-panel" aria-live="polite"></div>
